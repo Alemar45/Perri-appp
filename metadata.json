@@ -1,0 +1,9 @@
+
+{
+  "name": "Perri - Tu App Canina",
+  "description": "Cuidado, comunidad y salud para tu mejor amigo con inteligencia artificial.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
