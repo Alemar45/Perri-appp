@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginView from './views/LoginView';
 import HealthView from './views/HealthView';
 import CommunityView from './views/CommunityView';
@@ -9,7 +9,7 @@ import ChatView from './views/ChatView';
 import ProfileView from './views/ProfileView';
 import BottomNav from './components/BottomNav';
 
-const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const MainLayout: React.FC<{ children: React.ReactNode; onLogout: () => void }> = ({ children, onLogout }) => {
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto relative overflow-hidden bg-background-light dark:bg-background-dark">
       <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">
@@ -20,24 +20,48 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Default to true for demo purposes
-  
-  if (!isAuthenticated) return <Navigate to="/login" />;
-  
-  return <MainLayout>{children}</MainLayout>;
-};
-
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('perri_auth') === 'true';
+  });
+
+  const handleLogin = () => {
+    localStorage.setItem('perri_auth', 'true');
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('perri_auth');
+    setIsAuthenticated(false);
+  };
+
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<LoginView />} />
-        <Route path="/" element={<ProtectedRoute><HealthView /></ProtectedRoute>} />
-        <Route path="/community" element={<ProtectedRoute><CommunityView /></ProtectedRoute>} />
-        <Route path="/vets" element={<ProtectedRoute><VetsView /></ProtectedRoute>} />
-        <Route path="/chat" element={<ProtectedRoute><ChatView /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/" /> : <LoginView onLogin={handleLogin} />} 
+        />
+        <Route 
+          path="/" 
+          element={isAuthenticated ? <MainLayout onLogout={handleLogout}><HealthView /></MainLayout> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/community" 
+          element={isAuthenticated ? <MainLayout onLogout={handleLogout}><CommunityView /></MainLayout> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/vets" 
+          element={isAuthenticated ? <MainLayout onLogout={handleLogout}><VetsView /></MainLayout> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/chat" 
+          element={isAuthenticated ? <MainLayout onLogout={handleLogout}><ChatView /></MainLayout> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/profile" 
+          element={isAuthenticated ? <MainLayout onLogout={handleLogout}><ProfileView onLogout={handleLogout} /></MainLayout> : <Navigate to="/login" />} 
+        />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
