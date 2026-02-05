@@ -1,12 +1,16 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { ChatMessage, VetClinic } from "./types";
 
 const getAI = () => {
-  const apiKey = process.env.API_KEY;
+  // Usamos casting a 'any' para evitar que TSC bloquee el build si no reconoce 'process'
+  const env = (window as any).process?.env || (import.meta as any).env || {};
+  const apiKey = process.env.API_KEY || env.API_KEY;
+  
   if (!apiKey) {
-    throw new Error("API_KEY no encontrada. Configúrala en las variables de entorno de Vercel.");
+    console.warn("API_KEY no detectada todavía.");
   }
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: apiKey || "" });
 };
 
 export const getGeminiResponse = async (history: ChatMessage[], message: string) => {
@@ -16,41 +20,36 @@ export const getGeminiResponse = async (history: ChatMessage[], message: string)
       model: "gemini-3-flash-preview",
       contents: message,
       config: {
-        systemInstruction: "Eres 'Perri AI', el asistente canino definitivo en español. Eres experto en veterinaria, comportamiento y nutrición. Tu tono es cálido, profesional y usas muchos emojis de perros. Tu misión es ayudar a los dueños a cuidar mejor de sus perros.",
+        systemInstruction: "Eres 'Perri AI', el asistente canino definitivo en español. Tu tono es cálido y profesional. Ayuda a los dueños de perros.",
       },
     });
 
-    return response.text || "¡Guau! Me quedé dormido un segundo. ¿Me repites la pregunta?";
+    return response.text || "¡Guau! ¿Podrías repetir eso?";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "¡Ups! Mi conexión perruna falló. Revisa que tu API_KEY esté bien configurada en el panel de Vercel.";
+    return "¡Ups! Revisa tu conexión o la configuración de tu API_KEY en Vercel.";
   }
 };
 
 export const getVetsByZone = async (zone: string, lat?: number, lng?: number): Promise<VetClinic[]> => {
   try {
     const ai = getAI();
-    
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Busca 5 veterinarias reales en la zona de '${zone}'. Necesito sus nombres, direcciones exactas y teléfonos.`,
+      contents: `Busca 5 veterinarias reales en '${zone}'.`,
       config: {
         tools: [{ googleMaps: {} }],
         ...(lat && lng ? {
           toolConfig: {
-            retrievalConfig: {
-              latLng: { latitude: lat, longitude: lng }
-            }
+            retrievalConfig: { latLng: { latitude: lat, longitude: lng } }
           }
         } : {})
       },
     });
 
-    const text = response.text || "";
-    
     const parser = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Convierte este texto en un JSON con el campo 'clinics' (name, address, phone, rating, services[]). Texto: ${text}`,
+      contents: `Extrae las veterinarias de este texto a JSON: ${response.text}`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -79,14 +78,13 @@ export const getVetsByZone = async (zone: string, lat?: number, lng?: number): P
       ...c,
       id: `vet-${i}`,
       status: 'Abierto',
-      distance: 'Cerca de ti',
+      distance: 'Cerca',
       closingTime: '20:00',
       imageUrl: '',
       lat: lat || 0,
       lng: lng || 0
     }));
   } catch (error) {
-    console.error("Error al buscar veterinarias:", error);
     return [];
   }
 };
