@@ -1,16 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { INITIAL_PET } from '../constants';
 
-const ProfileView: React.FC = () => {
+interface ProfileViewProps {
+  onLogout: () => void;
+}
+
+const ProfileView: React.FC<ProfileViewProps> = ({ onLogout }) => {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [userData, setUserData] = useState({
-    name: 'Sarah Thompson',
-    email: 'sarah@perriapp.com',
-    memberSince: 'Octubre 2023',
-    points: 1250
+  const [showDogId, setShowDogId] = useState(false);
+  const [pet] = useState(() => {
+    const saved = localStorage.getItem('perri_pet_data');
+    return saved ? JSON.parse(saved) : INITIAL_PET;
   });
 
   const toggleDarkMode = () => {
@@ -39,23 +43,72 @@ const ProfileView: React.FC = () => {
                <span className="material-symbols-outlined text-black text-lg font-black">verified</span>
             </div>
           </div>
-          <h2 className="mt-4 text-2xl font-black tracking-tight">{userData.name}</h2>
-          <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em]">{userData.email}</p>
+          <h2 className="mt-4 text-2xl font-black tracking-tight">Sarah Thompson</h2>
+          <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em]">Premium Member</p>
         </div>
       </div>
 
       <div className="px-6 space-y-6">
-        {/* STATS RÁPIDAS */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white dark:bg-zinc-900 p-5 rounded-[2rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Puntos Perri</p>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-black">🐾 {userData.points}</span>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 p-5 rounded-[2rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Miembro</p>
-            <p className="text-sm font-black">2023</p>
+        {/* SORPRESA: CREDENCIAL DIGITAL */}
+        <div className="space-y-3">
+          <p className="text-[10px] font-black uppercase text-gray-400 px-2 tracking-widest">Digital Dog ID</p>
+          <div 
+            onClick={() => setShowDogId(!showDogId)}
+            className={`relative overflow-hidden rounded-[2.5rem] p-8 transition-all duration-500 cursor-pointer shadow-2xl ${
+              showDogId ? 'h-72 bg-zinc-900 text-white' : 'h-24 bg-primary text-black'
+            }`}
+          >
+            {/* Elementos Decorativos de la Tarjeta */}
+            <div className="absolute top-[-20px] right-[-20px] size-32 bg-white/10 rounded-full blur-2xl"></div>
+            
+            {!showDogId ? (
+              <div className="flex items-center justify-between h-full">
+                <div className="flex items-center gap-4">
+                   <div className="size-12 rounded-2xl bg-black/10 flex items-center justify-center">
+                     <span className="material-symbols-outlined text-3xl font-black">badge</span>
+                   </div>
+                   <div>
+                     <p className="font-black uppercase tracking-tighter italic">Credencial Perri</p>
+                     <p className="text-[9px] font-black opacity-60">TOCA PARA VER ID DIGITAL</p>
+                   </div>
+                </div>
+                <span className="material-symbols-outlined font-black">expand_more</span>
+              </div>
+            ) : (
+              <div className="animate-in fade-in zoom-in duration-300">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h3 className="text-3xl font-black italic tracking-tighter leading-none">{pet.name}</h3>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">{pet.breed}</p>
+                  </div>
+                  <div className="size-16 rounded-2xl bg-white border-4 border-primary overflow-hidden">
+                    <img src={pet.imageUrl} className="w-full h-full object-cover" alt="ID" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
+                  <div>
+                    <p className="text-[8px] font-black uppercase opacity-50 tracking-widest">ID ÚNICO</p>
+                    <p className="text-xs font-bold">#P-2024-MAX</p>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black uppercase opacity-50 tracking-widest">PROPIETARIO</p>
+                    <p className="text-xs font-bold">S. THOMPSON</p>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black uppercase opacity-50 tracking-widest">PESO ACTUAL</p>
+                    <p className="text-xs font-bold">{pet.weight}</p>
+                  </div>
+                  <div className="flex justify-end items-end">
+                    <div className="bg-white p-1 rounded-lg">
+                      {/* Placeholder QR */}
+                      <div className="size-10 bg-zinc-900 rounded-sm"></div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[8px] font-black text-center mt-6 opacity-30 tracking-[0.5em]">VALIDEZ NACIONAL 🐾</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -94,19 +147,6 @@ const ProfileView: React.FC = () => {
                 </button>
               </div>
             )}
-
-            <button className="w-full p-6 flex items-center justify-between active:bg-gray-50 dark:active:bg-zinc-800 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="size-11 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500">
-                  <span className="material-symbols-outlined">mail</span>
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-black">Cambiar Email</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">{userData.email}</p>
-                </div>
-              </div>
-              <span className="material-symbols-outlined">chevron_right</span>
-            </button>
           </div>
         </div>
 
@@ -131,27 +171,12 @@ const ProfileView: React.FC = () => {
                 <div className={`absolute top-1 size-4 rounded-full bg-white transition-all ${isDarkMode ? 'right-1' : 'left-1'}`}></div>
               </button>
             </div>
-
-            <div className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="size-11 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500">
-                  <span className="material-symbols-outlined">notifications</span>
-                </div>
-                <div>
-                  <p className="text-sm font-black">Notificaciones</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Salud, Citas y Tips</p>
-                </div>
-              </div>
-              <button className="w-12 h-6 bg-primary rounded-full relative">
-                <div className="absolute top-1 right-1 size-4 rounded-full bg-white"></div>
-              </button>
-            </div>
           </div>
         </div>
 
         {/* LOGOUT */}
         <button 
-          onClick={() => navigate('/login')}
+          onClick={onLogout}
           className="w-full p-6 bg-red-50 dark:bg-red-500/10 rounded-[2rem] flex items-center justify-center gap-3 active:scale-95 transition-all group"
         >
           <span className="material-symbols-outlined text-red-500 font-black">logout</span>
@@ -159,7 +184,7 @@ const ProfileView: React.FC = () => {
         </button>
 
         <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] py-4">
-          Perri v1.0.4 - Hecho con 🦴
+          Perri v1.0.5 - Hecho con 🦴
         </p>
       </div>
     </div>
