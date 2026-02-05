@@ -1,42 +1,35 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+ import { GoogleGenAI, Type } from "@google/genai";
 import { ChatMessage, VetClinic } from "./types";
 
-const getAI = () => {
-  // Usamos casting a 'any' para evitar que TSC bloquee el build si no reconoce 'process'
-  const env = (window as any).process?.env || (import.meta as any).env || {};
-  const apiKey = process.env.API_KEY || env.API_KEY;
-  
-  if (!apiKey) {
-    console.warn("API_KEY no detectada todavía.");
-  }
-  return new GoogleGenAI({ apiKey: apiKey || "" });
-};
-
+// Replaced getAI with direct initialization in each function to ensure fresh instance as per guidelines
 export const getGeminiResponse = async (history: ChatMessage[], message: string) => {
   try {
-    const ai = getAI();
+    // Initializing with process.env.API_KEY directly in the function call context
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: message,
+      // Correctly passing previous conversation history + new message to generateContent
+      contents: [...history, { role: 'user', parts: [{ text: message }] }],
       config: {
-        systemInstruction: "Eres 'Perri AI', el asistente canino definitivo en español. Tu tono es cálido y profesional. Ayuda a los dueños de perros.",
+        systemInstruction: "Eres 'Perri AI', el asistente canino definitivo en español. Tu tono es cálido y profesional. Ayuda a los dueños de perros con consejos sobre salud, entrenamiento y bienestar.",
       },
     });
 
     return response.text || "¡Guau! ¿Podrías repetir eso?";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "¡Ups! Revisa tu conexión o la configuración de tu API_KEY en Vercel.";
+    return "¡Ups! Revisa tu conexión o la configuración de tu API_KEY.";
   }
 };
 
 export const getVetsByZone = async (zone: string, lat?: number, lng?: number): Promise<VetClinic[]> => {
   try {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Using gemini-2.5-flash which is the required model for Maps Grounding tasks
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Busca 5 veterinarias reales en '${zone}'.`,
+      contents: `Encuentra las 6 mejores veterinarias en '${zone}'. Prioriza aquellas que ofrecen atención de urgencias o 24 horas.`,
       config: {
         tools: [{ googleMaps: {} }],
         ...(lat && lng ? {
@@ -49,7 +42,7 @@ export const getVetsByZone = async (zone: string, lat?: number, lng?: number): P
 
     const parser = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Extrae las veterinarias de este texto a JSON: ${response.text}`,
+      contents: `De este texto, extrae una lista estructurada de veterinarias en JSON: ${response.text}. Asegúrate de identificar correctamente si atienden 24 horas.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -64,6 +57,8 @@ export const getVetsByZone = async (zone: string, lat?: number, lng?: number): P
                   address: { type: Type.STRING },
                   phone: { type: Type.STRING },
                   rating: { type: Type.NUMBER },
+                  is24h: { type: Type.BOOLEAN },
+                  closingTime: { type: Type.STRING, description: "Hora de cierre o 'Abierto 24hs'" },
                   services: { type: Type.ARRAY, items: { type: Type.STRING } }
                 }
               }
@@ -76,15 +71,15 @@ export const getVetsByZone = async (zone: string, lat?: number, lng?: number): P
     const data = JSON.parse(parser.text || '{"clinics": []}');
     return data.clinics.map((c: any, i: number) => ({
       ...c,
-      id: `vet-${i}`,
-      status: 'Abierto',
-      distance: 'Cerca',
-      closingTime: '20:00',
+      id: `vet-${i}-${Date.now()}`,
+      status: c.is24h ? 'Abierto 24hs' : 'Abierto',
+      distance: 'A pocos minutos',
       imageUrl: '',
       lat: lat || 0,
       lng: lng || 0
     }));
   } catch (error) {
+    console.error("Error buscando veterinarias:", error);
     return [];
   }
 };
