@@ -1,13 +1,23 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { INITIAL_PET, HEALTH_STATS } from '../constants';
 import { PetProfile } from '../types';
 
 const HealthView: React.FC = () => {
-  const [pet, setPet] = useState<PetProfile>(INITIAL_PET);
+  // Inicializamos el estado intentando leer de LocalStorage primero
+  const [pet, setPet] = useState<PetProfile>(() => {
+    const savedPet = localStorage.getItem('perri_pet_data');
+    return savedPet ? JSON.parse(savedPet) : INITIAL_PET;
+  });
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [tempPet, setTempPet] = useState<PetProfile>(INITIAL_PET);
+  const [tempPet, setTempPet] = useState<PetProfile>(pet);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Guardamos en LocalStorage cada vez que el perfil cambie
+  useEffect(() => {
+    localStorage.setItem('perri_pet_data', JSON.stringify(pet));
+  }, [pet]);
 
   const categories = [
     { name: 'Salud', type: 'health' },
