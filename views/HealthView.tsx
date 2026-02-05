@@ -1,38 +1,52 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { INITIAL_PET, HEALTH_STATS } from '../constants';
-import { PetProfile } from '../types';
+import { PetProfile, HealthStat } from '../types';
 
 const HealthView: React.FC = () => {
-  // Inicializamos el estado intentando leer de LocalStorage primero
+  // Estado del Perfil
   const [pet, setPet] = useState<PetProfile>(() => {
     const savedPet = localStorage.getItem('perri_pet_data');
     return savedPet ? JSON.parse(savedPet) : INITIAL_PET;
   });
 
+  // Estado de los Registros (Vacunas, Baños, etc.)
+  const [stats, setStats] = useState<HealthStat[]>(() => {
+    const savedStats = localStorage.getItem('perri_health_stats');
+    return savedStats ? JSON.parse(savedStats) : HEALTH_STATS;
+  });
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [tempPet, setTempPet] = useState<PetProfile>(pet);
+  const [tempStats, setTempStats] = useState<HealthStat[]>(stats);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Guardamos en LocalStorage cada vez que el perfil cambie
+  // Persistencia
   useEffect(() => {
     localStorage.setItem('perri_pet_data', JSON.stringify(pet));
-  }, [pet]);
+    localStorage.setItem('perri_health_stats', JSON.stringify(stats));
+  }, [pet, stats]);
 
   const categories = [
-    { name: 'Salud', type: 'health' },
-    { name: 'Higiene', type: 'hygiene' },
-    { name: 'Desparasitación', type: 'deworming' },
+    { name: 'Salud', type: 'health' as const },
+    { name: 'Higiene', type: 'hygiene' as const },
+    { name: 'Desparasitación', type: 'deworming' as const },
   ];
 
   const handleOpenEdit = () => {
     setTempPet({ ...pet });
+    setTempStats([...stats]);
     setIsEditModalOpen(true);
   };
 
   const handleSave = () => {
     setPet({ ...tempPet });
+    setStats([...tempStats]);
     setIsEditModalOpen(false);
+  };
+
+  const handleUpdateStat = (id: string, newStatus: string) => {
+    setTempStats(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,16 +87,6 @@ const HealthView: React.FC = () => {
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#9c8749] mt-1">
             "El mejor amigo de tu mejor amigo" 🦴
           </p>
-        </div>
-        <div className="flex items-center px-4 pb-2 justify-between">
-          <div className="flex size-10 shrink-0 items-center justify-start cursor-pointer">
-            <span className="material-symbols-outlined text-gray-400">menu</span>
-          </div>
-          <div className="flex w-10 items-center justify-end">
-            <button className="flex size-10 items-center justify-center rounded-full hover:bg-black/5">
-              <span className="material-symbols-outlined text-gray-400">notifications</span>
-            </button>
-          </div>
         </div>
       </header>
 
@@ -140,10 +144,10 @@ const HealthView: React.FC = () => {
         <div key={cat.name} className="px-4 mt-4 mb-6">
           <div className="flex items-center justify-between mb-3 px-1">
             <h2 className="text-[22px] font-black tracking-tight uppercase text-sm text-gray-400">{cat.name}</h2>
-            <button className="text-primary font-bold text-xs">VER HISTORIAL</button>
+            <button onClick={handleOpenEdit} className="text-primary font-bold text-xs">EDITAR REGISTROS</button>
           </div>
           <div className="bg-white dark:bg-white/5 rounded-[2rem] shadow-sm overflow-hidden divide-y divide-gray-50 dark:divide-white/5 border border-gray-100 dark:border-white/10">
-            {HEALTH_STATS.filter(s => s.type === cat.type).map((stat) => (
+            {stats.filter(s => s.type === cat.type).map((stat) => (
               <div key={stat.id} className="flex items-center gap-4 px-5 min-h-[80px] py-4 justify-between group">
                 <div className="flex items-center gap-4">
                   <div className={`flex items-center justify-center rounded-2xl shrink-0 size-12 shadow-inner ${stat.color ? 'bg-red-50 text-red-500' : 'bg-primary/10 text-primary'}`}>
@@ -154,8 +158,8 @@ const HealthView: React.FC = () => {
                     <p className={`text-[11px] font-bold mt-0.5 ${stat.color || 'text-[#9c8749]'}`}>{stat.status.toUpperCase()}</p>
                   </div>
                 </div>
-                <button className="flex size-10 items-center justify-center rounded-full bg-gray-50 dark:bg-white/10 active:scale-90 transition-all">
-                  <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                <button onClick={handleOpenEdit} className="flex size-10 items-center justify-center rounded-full bg-gray-50 dark:bg-white/10 active:scale-90 transition-all">
+                  <span className="material-symbols-outlined text-[20px]">edit</span>
                 </button>
               </div>
             ))}
@@ -167,118 +171,92 @@ const HealthView: React.FC = () => {
       {isEditModalOpen && (
         <div 
           onPaste={handlePaste}
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-10 focus:outline-none"
-          tabIndex={0}
+          className="fixed inset-0 z-[150] flex items-end justify-center bg-black/60 backdrop-blur-sm px-4 pb-0"
         >
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-[3rem] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300">
-            <div className="flex items-center justify-between mb-6">
-               <h3 className="text-2xl font-black tracking-tight">Editar Perfil</h3>
-               <button onClick={() => setIsEditModalOpen(false)} className="size-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-t-[3rem] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300 h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between mb-6 shrink-0">
+               <h3 className="text-2xl font-black tracking-tight">Editar Información</h3>
+               <button onClick={() => setIsEditModalOpen(false)} className="size-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-90">
                  <span className="material-symbols-outlined">close</span>
                </button>
             </div>
             
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar pr-1">
-              {/* Foto Upload Section */}
-              <div className="flex flex-col items-center gap-3 mb-6 p-4 bg-gray-50 dark:bg-white/5 rounded-3xl border-2 border-dashed border-gray-200 dark:border-zinc-800">
-                <div 
-                  className="size-20 rounded-2xl bg-center bg-cover bg-gray-200"
-                  style={{ backgroundImage: `url("${tempPet.imageUrl}")` }}
-                />
-                <div className="text-center">
+            <div className="flex-1 overflow-y-auto no-scrollbar pr-1 space-y-8 pb-10">
+              {/* Sección Foto */}
+              <div className="space-y-4">
+                <p className="text-[11px] font-black uppercase text-primary tracking-[0.2em]">Perfil Principal</p>
+                <div className="flex flex-col items-center gap-3 p-6 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-zinc-800">
+                  <div 
+                    className="size-24 rounded-3xl bg-center bg-cover bg-gray-200 border-2 border-primary"
+                    style={{ backgroundImage: `url("${tempPet.imageUrl}")` }}
+                  />
                   <button 
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-black text-primary uppercase tracking-wider bg-white dark:bg-zinc-800 px-4 py-2 rounded-xl shadow-sm active:scale-95 transition-all"
+                    className="text-[10px] font-black text-black uppercase bg-primary px-6 py-3 rounded-2xl shadow-lg active:scale-95 transition-all"
                   >
-                    Seleccionar Foto
+                    Actualizar Foto
                   </button>
-                  <p className="text-[9px] font-bold text-gray-400 mt-2 uppercase">O puedes pegar una imagen aquí mismo 📋</p>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </div>
-                <input 
-                  ref={fileInputRef}
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handleFileChange}
-                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="block">
+                    <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-2">Nombre</p>
+                    <input type="text" value={tempPet.name} onChange={(e) => setTempPet({...tempPet, name: e.target.value})} className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary" />
+                  </label>
+                  <label className="block">
+                    <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-2">Edad</p>
+                    <input type="text" value={tempPet.age} onChange={(e) => setTempPet({...tempPet, age: e.target.value})} className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary" />
+                  </label>
+                </div>
               </div>
 
-              <label className="block">
-                <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1">Nombre del Perrito</p>
-                <input 
-                  type="text" 
-                  value={tempPet.name}
-                  onChange={(e) => setTempPet({...tempPet, name: e.target.value})}
-                  className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary"
-                />
-              </label>
-
-              <div className="grid grid-cols-2 gap-4">
-                <label className="block">
-                  <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1">Edad</p>
-                  <input 
-                    type="text" 
-                    value={tempPet.age}
-                    onChange={(e) => setTempPet({...tempPet, age: e.target.value})}
-                    className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary"
-                  />
-                </label>
-                <label className="block">
-                  <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1">Peso</p>
-                  <input 
-                    type="text" 
-                    value={tempPet.weight}
-                    onChange={(e) => setTempPet({...tempPet, weight: e.target.value})}
-                    className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary"
-                  />
-                </label>
+              {/* Sección Nutrición */}
+              <div className="space-y-4">
+                <p className="text-[11px] font-black uppercase text-primary tracking-[0.2em]">Plan Nutricional</p>
+                <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-[2.5rem] space-y-4">
+                  <label className="block">
+                    <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-2">Tipo de Alimento</p>
+                    <input type="text" value={tempPet.foodType} onChange={(e) => setTempPet({...tempPet, foodType: e.target.value})} className="w-full h-14 bg-white dark:bg-zinc-800 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary shadow-sm" />
+                  </label>
+                  <label className="block">
+                    <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-2">Dosis Recomendada</p>
+                    <input type="text" value={tempPet.foodDosage} onChange={(e) => setTempPet({...tempPet, foodDosage: e.target.value})} className="w-full h-14 bg-white dark:bg-zinc-800 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary shadow-sm" />
+                  </label>
+                </div>
               </div>
 
-              <label className="block">
-                <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1">Raza</p>
-                <input 
-                  type="text" 
-                  value={tempPet.breed}
-                  onChange={(e) => setTempPet({...tempPet, breed: e.target.value})}
-                  className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary"
-                />
-              </label>
-
-              <label className="block">
-                <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1">Tipo de Comida</p>
-                <input 
-                  type="text" 
-                  value={tempPet.foodType}
-                  onChange={(e) => setTempPet({...tempPet, foodType: e.target.value})}
-                  className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary"
-                  placeholder="Ej: Balanceado, Comida casera..."
-                />
-              </label>
-
-              <label className="block">
-                <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1">Dosis Alimenticia</p>
-                <input 
-                  type="text" 
-                  value={tempPet.foodDosage}
-                  onChange={(e) => setTempPet({...tempPet, foodDosage: e.target.value})}
-                  className="w-full h-14 bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary"
-                  placeholder="Ej: 300g al día..."
-                />
-              </label>
+              {/* Sección de Registros Médicos e Higiene */}
+              {categories.map((cat) => (
+                <div key={cat.name} className="space-y-4">
+                  <p className="text-[11px] font-black uppercase text-primary tracking-[0.2em]">{cat.name}</p>
+                  <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-[2.5rem] space-y-4">
+                    {tempStats.filter(s => s.type === cat.type).map(stat => (
+                      <label key={stat.id} className="block">
+                        <p className="text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-2 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">{stat.icon}</span>
+                          {stat.title}
+                        </p>
+                        <input 
+                          type="text" 
+                          value={stat.status} 
+                          onChange={(e) => handleUpdateStat(stat.id, e.target.value)} 
+                          className="w-full h-14 bg-white dark:bg-zinc-800 border-none rounded-2xl px-5 font-bold focus:ring-2 focus:ring-primary shadow-sm"
+                          placeholder="Ej: Al día, Próximo martes..."
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="mt-8 flex gap-3">
-               <button 
-                onClick={() => setIsEditModalOpen(false)}
-                className="flex-1 h-14 bg-gray-100 dark:bg-white/5 rounded-2xl font-black text-gray-500"
-               >
+            <div className="shrink-0 pt-4 pb-8 flex gap-3">
+               <button onClick={() => setIsEditModalOpen(false)} className="flex-1 h-16 bg-gray-100 dark:bg-white/10 rounded-2xl font-black text-gray-500 uppercase tracking-widest text-xs">
                  CANCELAR
                </button>
-               <button 
-                onClick={handleSave}
-                className="flex-[2] h-14 bg-primary text-black rounded-2xl font-black shadow-lg shadow-primary/20 active:scale-95 transition-all"
-               >
+               <button onClick={handleSave} className="flex-[2] h-16 bg-primary text-black rounded-2xl font-black shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest text-xs">
                  GUARDAR CAMBIOS
                </button>
             </div>
