@@ -10,7 +10,7 @@ const BottomNav: React.FC = () => {
     { path: '/', label: 'Salud', icon: 'health_and_safety' },
     { path: '/community', label: 'Muro', icon: 'dynamic_feed' },
     { path: '/vets', label: 'Vets', icon: 'local_hospital' },
-    { path: '/chat', label: 'Chat', icon: 'smart_toy' },
+    { path: '/profile', label: 'Perfil', icon: 'person' },
   ];
 
   return (
@@ -70,3 +70,4 @@ const BottomNav: React.FC = () => {
 };
 
 export default BottomNav;
+
