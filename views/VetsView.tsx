@@ -18,7 +18,10 @@ const VetsView: React.FC = () => {
       const results = await getVetsByZone(term, lat, lng);
       if (results && results.length > 0) {
         setClinics(results);
-        setCurrentLocation(term === 'cerca de mi ubicación' ? 'Tu ubicación actual' : term);
+        // Solo actualizamos la etiqueta de ubicación si es una búsqueda de región, no de una clínica específica
+        if (!term.includes(results[0].name)) {
+          setCurrentLocation(term === 'cerca de mi ubicación' ? 'Tu zona' : term);
+        }
       }
     } catch (err) {
       console.error("Error en búsqueda:", err);
@@ -28,7 +31,9 @@ const VetsView: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Búsqueda inicial por geolocalización
+    // Si ya tenemos clínicas (de una búsqueda previa o inicial), no forzamos búsqueda
+    if (clinics.length > 2) return; 
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => performSearch('cerca de mi ubicación', pos.coords.latitude, pos.coords.longitude),
@@ -44,7 +49,8 @@ const VetsView: React.FC = () => {
     performSearch(searchTerm);
   };
 
-  const filteredClinics = filter24h 
+  // Lógica de filtrado: si filter24h es false, muestra TODO (clinics). Si es true, filtra.
+  const displayClinics = filter24h 
     ? clinics.filter(v => v.is24h) 
     : clinics;
 
@@ -58,8 +64,8 @@ const VetsView: React.FC = () => {
             <span className="material-symbols-outlined text-black text-xl font-black">local_hospital</span>
           </div>
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tight italic">Centro Veterinario</h2>
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest -mt-1">Zona: {currentLocation}</p>
+            <h2 className="text-xl font-black uppercase tracking-tight italic">Clínicas Cercanas</h2>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest -mt-1">Región: {currentLocation}</p>
           </div>
         </div>
         
@@ -70,7 +76,7 @@ const VetsView: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
               className="w-full h-14 bg-gray-100 dark:bg-zinc-800 border-none rounded-2xl px-6 text-sm font-bold focus:ring-2 focus:ring-primary transition-all pr-12"
-              placeholder="Cambiar región (ej: Madrid, Palermo...)"
+              placeholder="Buscar en otra ciudad o barrio..."
             />
             {isLoading && (
               <div className="absolute right-4 top-4.5 size-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -85,7 +91,6 @@ const VetsView: React.FC = () => {
           </button>
         </div>
 
-        {/* FILTROS RÁPIDOS */}
         <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar pb-1">
           <button 
             onClick={() => setFilter24h(!filter24h)}
@@ -93,8 +98,8 @@ const VetsView: React.FC = () => {
               filter24h ? 'bg-red-500 border-red-500 text-white shadow-lg' : 'bg-white dark:bg-zinc-800 border-gray-100 dark:border-zinc-700 text-gray-500'
             }`}
           >
-            <span className="material-symbols-outlined text-sm">emergency</span>
-            Solo 24 Horas
+            <span className="material-symbols-outlined text-sm">{filter24h ? 'check_circle' : 'emergency'}</span>
+            Solo Urgencias 24h
           </button>
           
           <div className="h-9 w-[1px] bg-gray-100 dark:bg-zinc-800 mx-1 self-center"></div>
@@ -116,22 +121,26 @@ const VetsView: React.FC = () => {
 
       {view === 'List' ? (
         <div className="p-4 space-y-4">
-          {isLoading && (
+          {isLoading && clinics.length <= 2 && (
             <div className="flex flex-col items-center justify-center py-20 animate-pulse">
                <span className="material-symbols-outlined text-6xl text-primary">pet_supplies</span>
-               <p className="text-[10px] font-black uppercase text-gray-400 mt-4 tracking-widest">Escaneando zona...</p>
+               <p className="text-[10px] font-black uppercase text-gray-400 mt-4 tracking-widest">Buscando en {currentLocation}...</p>
             </div>
           )}
           
-          {!isLoading && filteredClinics.map((vet, idx) => (
+          {!isLoading && displayClinics.map((vet, idx) => (
             <div 
               key={vet.id} 
               className="bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] shadow-sm border border-gray-50 dark:border-zinc-800 relative overflow-hidden animate-in slide-in-from-bottom duration-500"
               style={{ animationDelay: `${idx * 80}ms` }}
             >
-              {vet.is24h && (
+              {vet.is24h ? (
                 <div className="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-black px-4 py-1.5 uppercase rounded-bl-2xl shadow-sm">
                   ABIERTO 24H 🚑
+                </div>
+              ) : (
+                <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[8px] font-black px-4 py-1.5 uppercase rounded-bl-2xl shadow-sm">
+                  HORARIO REGULAR
                 </div>
               )}
               
@@ -143,8 +152,8 @@ const VetsView: React.FC = () => {
                       <span key={s} className={`material-symbols-outlined text-[10px] ${s <= Math.round(vet.rating) ? 'text-primary material-symbols-fill' : 'text-gray-200'}`}>star</span>
                     ))}
                   </div>
-                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${vet.is24h ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'}`}>
-                    {vet.closingTime || 'Cierra 20:00'}
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${vet.is24h ? 'text-red-500' : 'text-emerald-500'}`}>
+                    {vet.closingTime || 'Consultar horario'}
                   </span>
                 </div>
               </div>
@@ -156,7 +165,7 @@ const VetsView: React.FC = () => {
               
               <div className="flex gap-2">
                 <button 
-                  onClick={() => { setCurrentLocation(vet.name + " " + vet.address); setView('Map'); }}
+                  onClick={() => { setView('Map'); setCurrentLocation(`${vet.name}, ${vet.address}`); }}
                   className="flex-1 h-12 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-2xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all"
                 >
                   Ver en el Mapa
@@ -171,11 +180,11 @@ const VetsView: React.FC = () => {
             </div>
           ))}
 
-          {!isLoading && filteredClinics.length === 0 && (
+          {!isLoading && displayClinics.length === 0 && (
             <div className="text-center py-20 px-10">
                <span className="material-symbols-outlined text-5xl text-gray-200">fmd_bad</span>
-               <p className="text-xs font-black text-gray-400 uppercase mt-4">No hay resultados con estos filtros en {currentLocation}.</p>
-               <button onClick={() => {setFilter24h(false); performSearch('Buenos Aires');}} className="mt-4 text-primary font-black text-[10px] uppercase underline">Resetear búsqueda</button>
+               <p className="text-xs font-black text-gray-400 uppercase mt-4">No hay veterinarias con estos criterios en {currentLocation}.</p>
+               <button onClick={() => {setFilter24h(false); setSearchTerm(''); performSearch('Buenos Aires');}} className="mt-4 text-primary font-black text-[10px] uppercase underline">Reiniciar búsqueda</button>
             </div>
           )}
         </div>
@@ -184,7 +193,7 @@ const VetsView: React.FC = () => {
           <iframe 
             width="100%" height="100%" frameBorder="0" 
             src={mapUrl} title="Mapa"
-            className="grayscale-[0.2] contrast-[1.1] dark:invert dark:hue-rotate-180"
+            className="contrast-[1.1] dark:invert dark:hue-rotate-180"
             loading="lazy"
           />
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full px-10">
