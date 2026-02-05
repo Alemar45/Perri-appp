@@ -1,3 +1,4 @@
+
 export interface PetProfile {
   name: string;
   breed: string;
@@ -41,6 +42,7 @@ export interface VetClinic {
   rating: number;
   status: string;
   closingTime: string;
+  is24h: boolean;
   services: string[];
   imageUrl: string;
   lat: number;
