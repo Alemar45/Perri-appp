@@ -3,7 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../geminiService';
 import { ChatMessage } from '../types';
 
-const ChatView: React.FC = () => {
+interface ChatViewProps {
+  embedded?: boolean;
+}
+
+const ChatView: React.FC<ChatViewProps> = ({ embedded = false }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'model', parts: [{ text: "¡Hola! Soy Perri AI 🐾. ¿En qué puedo ayudarte hoy? Puedes preguntarme sobre salud, alimentación o comportamiento de tu perro." }] }
   ]);
@@ -21,29 +25,34 @@ const ChatView: React.FC = () => {
     if (!input.trim() || isLoading) return;
     const userMsg: ChatMessage = { role: 'user', parts: [{ text: input }] };
     setMessages(prev => [...prev, userMsg]);
+    const messageToSend = input;
     setInput('');
     setIsLoading(true);
-    const response = await getGeminiResponse(messages, input);
+    
+    // Pasamos el historial real al servicio
+    const response = await getGeminiResponse(messages, messageToSend);
     setMessages(prev => [...prev, { role: 'model', parts: [{ text: response }] }]);
     setIsLoading(false);
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark">
-      <header className="p-4 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-3">
-        <div className="size-10 bg-primary rounded-full flex items-center justify-center text-black shadow-lg">
-          <span className="material-symbols-outlined font-black">smart_toy</span>
-        </div>
-        <div>
-          <h2 className="font-black text-sm uppercase tracking-widest">Perri AI</h2>
-          <div className="flex items-center gap-1">
-            <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span>
-            <span className="text-[9px] font-black text-emerald-600 uppercase">En línea</span>
+    <div className={`flex flex-col h-full bg-background-light dark:bg-background-dark ${embedded ? '' : 'h-screen'}`}>
+      {!embedded && (
+        <header className="p-4 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-3">
+          <div className="size-10 bg-primary rounded-full flex items-center justify-center text-black shadow-lg">
+            <span className="material-symbols-outlined font-black">smart_toy</span>
           </div>
-        </div>
-      </header>
+          <div>
+            <h2 className="font-black text-sm uppercase tracking-widest">Perri AI</h2>
+            <div className="flex items-center gap-1">
+              <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span>
+              <span className="text-[9px] font-black text-emerald-600 uppercase">En línea</span>
+            </div>
+          </div>
+        </header>
+      )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-40">
+      <div ref={scrollRef} className={`flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-32`}>
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
             <div className={`max-w-[85%] p-4 rounded-[2rem] text-sm ${
@@ -66,13 +75,13 @@ const ChatView: React.FC = () => {
         )}
       </div>
 
-      <div className="fixed bottom-24 left-0 right-0 p-4 max-w-md mx-auto z-50">
-        <div className="flex gap-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-2 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/20">
+      <div className={`${embedded ? 'p-4' : 'fixed bottom-24 left-0 right-0 p-4 max-w-md mx-auto z-50'}`}>
+        <div className="flex gap-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-2 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-gray-100 dark:border-zinc-800">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Pregúntame algo..."
+            placeholder="Pregunta sobre tu perro..."
             className="flex-1 bg-transparent border-none focus:ring-0 px-4 text-sm font-bold text-gray-800 dark:text-white"
           />
           <button 
