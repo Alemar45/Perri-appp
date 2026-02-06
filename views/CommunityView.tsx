@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { MOCK_POSTS } from '../constants';
 import { Post } from '../types';
@@ -82,64 +81,59 @@ const CommunityView: React.FC = () => {
 
   return (
     <div className="pb-40 min-h-screen bg-background-light dark:bg-background-dark font-display">
-      {/* HEADER SIMPLIFICADO */}
-      <header className="sticky top-0 z-[60] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 p-5 flex items-center justify-between shadow-sm">
+      {/* HEADER SIN BOTÓN DE NUEVO POST */}
+      <header className="sticky top-0 z-[60] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 p-5 flex items-center shadow-sm">
         <div className="flex items-center gap-3">
           <div className="size-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
              <span className="material-symbols-outlined text-black text-xl font-black">public</span>
           </div>
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none">Comunidad</h2>
-            <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">Tu Manada Online</p>
+            <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none">Muro Común</h2>
+            <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">La manada está activa</p>
           </div>
         </div>
       </header>
 
       <div className="px-4 py-6">
-        {/* ÁREA DE COMPOSICIÓN (REEMPLAZA AL BOTÓN NUEVO POST) */}
-        <div className="mb-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] p-4 shadow-sm border border-gray-100 dark:border-zinc-800 flex items-center gap-4">
-          <div className="size-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
-             <span className="material-symbols-outlined font-black">edit_note</span>
+        {/* BARRA DE COMPOSICIÓN (COMO RED SOCIAL) */}
+        <div className="mb-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] p-4 shadow-sm border border-gray-100 dark:border-zinc-800 flex items-center gap-4 active:scale-95 transition-all cursor-pointer" onClick={handleOpenNewPost}>
+          <div className="size-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-primary shrink-0">
+             <span className="material-symbols-outlined font-black">add_a_photo</span>
           </div>
-          <button 
-            onClick={handleOpenNewPost}
-            className="flex-1 text-left h-12 px-6 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-gray-400 font-bold text-sm hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
-          >
-            ¿Qué está pasando con tu perrito?
-          </button>
+          <div className="flex-1 h-12 px-5 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl flex items-center text-gray-400 font-bold text-sm">
+            Escribe algo para la manada...
+          </div>
         </div>
 
-        {/* BANNER PERRI AI - MEJORADO */}
+        {/* CHAT COMUNIDAD (BANNER GRANDE) */}
         <div className="mb-8">
           <button 
             onClick={() => setIsChatOpen(true)}
-            className="w-full relative overflow-hidden bg-zinc-900 dark:bg-white p-5 rounded-[2.5rem] shadow-2xl active:scale-[0.98] transition-all group border-b-8 border-primary/30"
+            className="w-full relative overflow-hidden bg-zinc-900 dark:bg-white p-6 rounded-[2.5rem] shadow-2xl active:scale-[0.98] transition-all group border-b-8 border-primary/30"
           >
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-4 text-left">
-                <div className="size-12 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20">
-                  <span className="material-symbols-outlined text-black font-black text-2xl">smart_toy</span>
+                <div className="size-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl">
+                  <span className="material-symbols-outlined text-black font-black text-3xl">smart_toy</span>
                 </div>
                 <div>
-                  <p className="text-primary text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">Asistente Virtual</p>
-                  <p className="text-white dark:text-black text-lg font-black italic tracking-tight leading-none">Chat de la Comunidad</p>
+                  <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-1">Comunidad AI</p>
+                  <p className="text-white dark:text-black text-xl font-black italic tracking-tight leading-none">Chat con la Manada</p>
                 </div>
               </div>
-              <div className="size-10 rounded-full bg-white/10 dark:bg-black/5 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary font-black">chat</span>
-              </div>
+              <span className="material-symbols-outlined text-primary font-black text-3xl">chat</span>
             </div>
           </button>
         </div>
 
         {/* CATEGORÍAS - GRID ORDENADO 2x2 */}
-        <p className="text-[10px] font-black uppercase text-gray-400 mb-4 px-1 tracking-widest">Filtrar por interés</p>
+        <p className="text-[10px] font-black uppercase text-gray-400 mb-4 px-2 tracking-widest">Filtrar por grupo</p>
         <div className="grid grid-cols-2 gap-3 mb-10">
           {categories.map((cat) => (
             <button
               key={cat.name}
               onClick={() => setFilter(filter === cat.name ? 'Todos' : cat.name)}
-              className={`flex items-center gap-3 p-4 rounded-3xl border-2 transition-all h-16 ${
+              className={`flex items-center gap-3 p-4 rounded-[1.5rem] border-2 transition-all h-16 ${
                 filter === cat.name 
                   ? 'bg-primary border-primary shadow-lg scale-[1.03] text-black' 
                   : 'bg-white dark:bg-zinc-800 border-gray-100 dark:border-zinc-800 text-gray-500'
@@ -155,35 +149,35 @@ const CommunityView: React.FC = () => {
           ))}
         </div>
 
-        {/* FEED DE HISTORIAS */}
-        <div className="flex items-center justify-between px-1 mb-6">
-          <h3 className="text-2xl font-black tracking-tighter italic">Novedades</h3>
+        {/* FEED DE POSTS */}
+        <div className="flex items-center justify-between px-2 mb-6">
+          <h3 className="text-2xl font-black tracking-tighter italic">Historias</h3>
           {filter !== 'Todos' && (
-            <button onClick={() => setFilter('Todos')} className="text-[10px] font-black text-primary uppercase underline">Ver todo</button>
+            <button onClick={() => setFilter('Todos')} className="text-[10px] font-black text-primary uppercase underline">Limpiar</button>
           )}
         </div>
 
         <div className="space-y-6">
           {posts.filter(p => filter === 'Todos' || p.category === filter).map((post) => (
-            <div key={post.id} className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800 transition-all hover:shadow-md">
-              {/* BOTÓN DE EDICIÓN EN CADA POST (LÁPIZ) */}
-              <div className="absolute top-4 right-4 flex gap-2">
+            <div key={post.id} className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800 group">
+              {/* BOTÓN LÁPIZ DE EDICIÓN EN CADA POST */}
+              <div className="absolute top-5 right-5 flex gap-2">
                 <button 
                   onClick={() => handleOpenEdit(post)}
-                  className="size-10 rounded-full bg-gray-50/80 dark:bg-zinc-800/80 backdrop-blur-md text-gray-400 flex items-center justify-center hover:bg-primary hover:text-black transition-all shadow-sm"
+                  className="size-10 rounded-full bg-gray-50/90 dark:bg-zinc-800/90 backdrop-blur-md text-gray-400 flex items-center justify-center hover:bg-primary hover:text-black transition-all shadow-sm active:scale-90"
                 >
                   <span className="material-symbols-outlined text-lg font-black">edit</span>
                 </button>
                 <button 
                   onClick={() => handleDelete(post.id)}
-                  className="size-10 rounded-full bg-gray-50/80 dark:bg-zinc-800/80 backdrop-blur-md text-gray-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                  className="size-10 rounded-full bg-gray-50/90 dark:bg-zinc-800/90 backdrop-blur-md text-gray-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-90"
                 >
                   <span className="material-symbols-outlined text-lg font-black">delete</span>
                 </button>
               </div>
 
               <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-5">
                   <div className="size-10 rounded-xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center font-black text-xs text-primary">
                     {post.author[0]}
                   </div>
@@ -193,20 +187,22 @@ const CommunityView: React.FC = () => {
                   </div>
                 </div>
                 
-                <p className="text-[15px] font-medium leading-relaxed text-gray-700 dark:text-gray-300 italic mb-4 pr-12">
+                <p className="text-[15px] font-medium leading-relaxed text-gray-700 dark:text-gray-300 italic mb-5 pr-12">
                   "{post.content}"
                 </p>
 
                 {post.imageUrl && (
-                  <img src={post.imageUrl} className="w-full h-56 object-cover rounded-[2rem] shadow-sm mb-4" alt="Post" />
+                  <div className="mb-5 overflow-hidden rounded-[2rem]">
+                    <img src={post.imageUrl} className="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-700" alt="Post" />
+                  </div>
                 )}
 
-                <div className="flex items-center gap-6 pt-4 border-t border-gray-50 dark:border-zinc-800">
-                   <button className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-6 pt-5 border-t border-gray-50 dark:border-zinc-800">
+                   <button className="flex items-center gap-2 text-gray-400 hover:text-red-500 transition-colors">
                      <span className="material-symbols-outlined text-xl">favorite</span>
                      <span className="text-xs font-black">{post.likes}</span>
                    </button>
-                   <button className="flex items-center gap-2 text-gray-400">
+                   <button className="flex items-center gap-2 text-gray-400 hover:text-primary transition-colors">
                      <span className="material-symbols-outlined text-xl">chat_bubble</span>
                      <span className="text-xs font-black">{post.comments}</span>
                    </button>
@@ -217,7 +213,7 @@ const CommunityView: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL DE COMPOSICIÓN / EDICIÓN */}
+      {/* MODAL DE EDICIÓN / CREACIÓN */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/80 backdrop-blur-md px-4 pb-0">
           <form 
@@ -231,7 +227,7 @@ const CommunityView: React.FC = () => {
                <button 
                 type="button"
                 onClick={() => setIsModalOpen(false)} 
-                className="size-12 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-90 transition-all"
+                className="size-12 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
                >
                  <span className="material-symbols-outlined">close</span>
                </button>
@@ -239,7 +235,7 @@ const CommunityView: React.FC = () => {
 
             <div className="space-y-8 overflow-y-auto no-scrollbar pb-8 flex-1">
               <div className="space-y-4">
-                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Etiqueta de grupo</p>
+                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Elegir Grupo</p>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                   {categories.map(cat => (
                     <button
@@ -259,14 +255,14 @@ const CommunityView: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Tu Mensaje</p>
+                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">¿Qué quieres contar?</p>
                 <textarea
                   autoFocus
                   required
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full h-44 bg-gray-50 dark:bg-zinc-800 border-none rounded-[2.5rem] p-8 text-base font-bold focus:ring-4 focus:ring-primary/20 shadow-inner resize-none text-gray-800 dark:text-white"
-                  placeholder="¡Escribe aquí para la manada! 🐾"
+                  className="w-full h-44 bg-gray-50 dark:bg-zinc-800 border-none rounded-[2.5rem] p-8 text-base font-bold focus:ring-4 focus:ring-primary/20 shadow-inner resize-none text-gray-800 dark:text-white outline-none"
+                  placeholder="Escribe aquí... 🐾"
                 />
               </div>
             </div>
@@ -284,7 +280,7 @@ const CommunityView: React.FC = () => {
         </div>
       )}
 
-      {/* CHAT AI BOTTOM SHEET */}
+      {/* CHAT AI INTEGRADO */}
       {isChatOpen && (
         <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/70 backdrop-blur-md">
           <div className="w-full max-w-md h-[95vh] bg-background-light dark:bg-background-dark rounded-t-[4rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-500 flex flex-col">
@@ -294,11 +290,8 @@ const CommunityView: React.FC = () => {
                   <span className="material-symbols-outlined text-black font-black">smart_toy</span>
                 </div>
                 <div>
-                  <h3 className="font-black text-base uppercase tracking-tight">Chat de la Manada</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">IA Conectada</p>
-                  </div>
+                  <h3 className="font-black text-base uppercase tracking-tight">Perri Chat</h3>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">En línea ahora</p>
                 </div>
               </div>
               <button 
