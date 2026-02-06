@@ -10,7 +10,7 @@ const CommunityView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   
-  // Estado para los posts con persistencia local
+  // Estado para los posts con persistencia local robusta
   const [posts, setPosts] = useState<Post[]>(() => {
     try {
       const saved = localStorage.getItem('perri_community_posts');
@@ -79,13 +79,14 @@ const CommunityView: React.FC = () => {
       setPosts(prev => [newPost, ...prev]);
     }
 
+    // Resetear todo
     setIsModalOpen(false);
     setContent('');
     setEditingPostId(null);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('¿Seguro que quieres borrar esta historia?')) {
+    if (confirm('¿Deseas eliminar esta historia para siempre?')) {
       setPosts(prev => prev.filter(p => p.id !== id));
     }
   };
@@ -100,132 +101,126 @@ const CommunityView: React.FC = () => {
   };
 
   return (
-    <div className="pb-40 min-h-screen bg-background-light dark:bg-background-dark">
-      {/* HEADER PREMIUM */}
+    <div className="pb-40 min-h-screen bg-background-light dark:bg-background-dark font-display">
+      {/* HEADER DE COMUNIDAD */}
       <header className="sticky top-0 z-[60] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 p-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="size-10 bg-primary rounded-xl flex items-center justify-center rotate-6 shadow-lg shadow-primary/20">
+          <div className="size-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
              <span className="material-symbols-outlined text-black text-xl font-black">public</span>
           </div>
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none">Comunidad</h2>
-            <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">La manada unida</p>
+            <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none">Muro Común</h2>
+            <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">Conecta con la manada</p>
           </div>
         </div>
         <button 
           onClick={handleOpenNewPost}
-          className="h-11 px-5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-[10px] uppercase shadow-xl active:scale-90 transition-all flex items-center gap-2"
+          className="h-10 px-5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-[10px] uppercase shadow-xl active:scale-90 transition-all flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-sm font-black">add_circle</span>
-          Publicar
+          Nuevo Post
         </button>
       </header>
 
       <div className="px-4 py-6">
-        {/* ASISTENTE AI - DISEÑO TIPO CARD DE CONTROL */}
-        <div className="mb-10">
-          <p className="text-[10px] font-black uppercase text-gray-400 mb-4 px-1 tracking-widest">¿Necesitas ayuda experta?</p>
+        {/* BOTÓN PERRI AI MEJORADO */}
+        <div className="mb-8">
+          <p className="text-[10px] font-black uppercase text-gray-400 mb-3 px-1 tracking-widest">¿Dudas? Pregunta a nuestra IA</p>
           <button 
             onClick={() => setIsChatOpen(true)}
-            className="w-full relative group overflow-hidden bg-zinc-900 dark:bg-white p-6 rounded-[2.5rem] shadow-2xl active:scale-[0.98] transition-all border-b-8 border-primary/30"
+            className="w-full relative overflow-hidden bg-zinc-900 dark:bg-white p-5 rounded-[2.5rem] shadow-2xl active:scale-[0.98] transition-all group border-b-4 border-primary/20"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-               <span className="material-symbols-outlined text-8xl font-black text-white dark:text-black">smart_toy</span>
-            </div>
-            <div className="relative z-10 flex items-center gap-5">
-              <div className="size-14 bg-primary rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40">
-                <span className="material-symbols-outlined text-black font-black text-3xl">chat_bubble</span>
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-4 text-left">
+                <div className="size-12 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20 group-hover:rotate-6 transition-transform">
+                  <span className="material-symbols-outlined text-black font-black text-2xl">smart_toy</span>
+                </div>
+                <div>
+                  <p className="text-primary text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">Asistente 24/7</p>
+                  <p className="text-white dark:text-black text-base font-black italic tracking-tight leading-none">Chat con Perri AI</p>
+                </div>
               </div>
-              <div className="text-left">
-                <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-1">Perri AI Chat 2.5</p>
-                <h4 className="text-white dark:text-black text-xl font-black tracking-tight italic">Consultar al Asistente</h4>
-              </div>
+              <span className="material-symbols-outlined text-primary font-black">arrow_forward</span>
             </div>
           </button>
         </div>
 
-        {/* EXPLORAR CATEGORÍAS - GRID COMPACTO Y ORDENADO */}
+        {/* CATEGORÍAS EN GRID COMPACTO */}
         <p className="text-[10px] font-black uppercase text-gray-400 mb-4 px-1 tracking-widest">Filtrar Historias</p>
-        <div className="grid grid-cols-2 gap-4 mb-10">
+        <div className="grid grid-cols-2 gap-3 mb-10">
           {categories.map((cat) => (
             <button
               key={cat.name}
               onClick={() => setFilter(filter === cat.name ? 'Todos' : cat.name)}
-              className={`flex items-center gap-3 p-4 rounded-[1.8rem] border-2 transition-all duration-300 h-16 ${
+              className={`flex items-center gap-3 p-4 rounded-[1.5rem] border-2 transition-all duration-300 h-16 ${
                 filter === cat.name 
-                  ? 'bg-primary border-primary shadow-xl scale-[1.05] text-black' 
+                  ? 'bg-primary border-primary shadow-lg scale-[1.03] text-black' 
                   : 'bg-white dark:bg-zinc-800 border-gray-100 dark:border-zinc-800 text-gray-500'
               }`}
             >
-              <div className={`size-9 rounded-xl flex items-center justify-center shrink-0 ${cat.color} ${filter === cat.name ? 'bg-white/40 text-black' : ''}`}>
-                <span className="material-symbols-outlined text-xl font-bold">{cat.icon}</span>
+              <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${cat.color} ${filter === cat.name ? 'bg-white/40 text-black' : ''}`}>
+                <span className="material-symbols-outlined text-lg font-bold">{cat.icon}</span>
               </div>
-              <span className="text-[11px] font-black uppercase tracking-tighter truncate">
+              <span className="text-[10px] font-black uppercase tracking-tight truncate">
                 {cat.name}
               </span>
             </button>
           ))}
         </div>
 
-        {/* LISTADO DE POSTS CON OPCIONES DE EDICIÓN */}
-        <div className="flex items-center justify-between px-1 mb-8">
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-2xl font-black tracking-tighter italic">Novedades</h3>
-            <span className="size-2 bg-red-500 rounded-full animate-pulse"></span>
-          </div>
+        {/* FEED DE POSTS */}
+        <div className="flex items-center justify-between px-1 mb-6">
+          <h3 className="text-2xl font-black tracking-tighter italic">Novedades</h3>
           {filter !== 'Todos' && (
-            <button onClick={() => setFilter('Todos')} className="text-[10px] font-black text-primary uppercase underline tracking-[0.2em]">Restablecer</button>
+            <button onClick={() => setFilter('Todos')} className="text-[10px] font-black text-primary uppercase underline tracking-widest">Ver todo</button>
           )}
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {posts.filter(p => filter === 'Todos' || p.category === filter).map((post) => (
-            <div key={post.id} className="group bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="size-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center font-black text-sm text-primary shadow-inner">
+            <div key={post.id} className="bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800 animate-in slide-in-from-bottom duration-500">
+              <div className="p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center font-black text-xs text-primary shadow-inner">
                     {post.author[0]}
                   </div>
                   <div>
-                    <p className="font-black text-base leading-none">{post.author}</p>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-1.5 flex items-center gap-2">
-                      <span className="text-primary">#{post.category}</span>
-                      <span>•</span>
-                      <span>{post.time}</span>
+                    <p className="font-black text-sm leading-none">{post.author}</p>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase mt-1">
+                      <span className="text-primary mr-1">#{post.category}</span>
+                      {post.time}
                     </p>
                   </div>
                 </div>
-                
-                {/* BOTONES DE EDICIÓN SOLO PARA 'TÚ' */}
                 {post.author === 'Tú' && (
                   <div className="flex gap-1">
                     <button 
                       onClick={() => handleOpenEdit(post)}
-                      className="size-10 rounded-full bg-gray-50 dark:bg-zinc-800 text-gray-400 flex items-center justify-center hover:bg-primary hover:text-black transition-all"
+                      className="size-9 rounded-xl bg-gray-50 dark:bg-zinc-800 text-gray-400 flex items-center justify-center hover:bg-primary hover:text-black transition-all active:scale-90"
                     >
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      <span className="material-symbols-outlined text-lg">edit</span>
                     </button>
                     <button 
                       onClick={() => handleDelete(post.id)}
-                      className="size-10 rounded-full bg-gray-50 dark:bg-zinc-800 text-gray-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                      className="size-9 rounded-xl bg-gray-50 dark:bg-zinc-800 text-gray-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all active:scale-90"
                     >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      <span className="material-symbols-outlined text-lg">delete</span>
                     </button>
                   </div>
                 )}
               </div>
               
-              <div className="px-8 pb-6">
-                <p className="text-base font-medium leading-relaxed text-gray-700 dark:text-gray-300 italic">"{post.content}"</p>
+              <div className="px-6 pb-2">
+                <p className="text-[15px] font-medium leading-relaxed text-gray-700 dark:text-gray-300 italic">"{post.content}"</p>
               </div>
 
               {post.imageUrl && (
-                <div className="px-4 pb-4">
-                  <img src={post.imageUrl} className="w-full h-64 object-cover rounded-[2.5rem] shadow-lg" alt="Post" />
+                <div className="px-3 pb-3">
+                  <img src={post.imageUrl} className="w-full h-60 object-cover rounded-[2rem] shadow-lg" alt="Post" />
                 </div>
               )}
 
-              <div className="px-8 py-6 flex items-center gap-8 border-t border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-800/20">
+              <div className="px-6 py-4 flex items-center gap-6 border-t border-gray-50 dark:border-zinc-800 bg-gray-50/20 dark:bg-zinc-800/20">
                  <button 
                   onClick={() => handleLike(post.id)}
                   className={`flex items-center gap-2 transition-all active:scale-125 ${post.isLiked ? 'text-red-500' : 'text-gray-400'}`}
@@ -237,7 +232,7 @@ const CommunityView: React.FC = () => {
                    <span className="material-symbols-outlined text-2xl">chat_bubble</span>
                    <span className="text-xs font-black">{post.comments}</span>
                  </button>
-                 <button className="flex items-center gap-2 text-gray-400 ml-auto hover:text-primary transition-colors">
+                 <button className="flex items-center gap-2 text-gray-400 ml-auto hover:text-primary">
                    <span className="material-symbols-outlined text-2xl">share</span>
                  </button>
               </div>
@@ -246,27 +241,27 @@ const CommunityView: React.FC = () => {
         </div>
       </div>
 
-      {/* BOTÓN FLOTANTE (FAB) PARA NUEVO POST - ACCESO GARANTIZADO */}
+      {/* FAB (Botón Flotante) PARA CREACIÓN RÁPIDA */}
       <button 
         onClick={handleOpenNewPost}
-        className="fixed bottom-32 right-6 size-16 bg-primary text-black rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center z-[70] animate-bounce active:scale-90 transition-all border-4 border-white dark:border-zinc-900"
+        className="fixed bottom-32 right-6 size-16 bg-primary text-black rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center z-[70] active:scale-90 transition-all border-4 border-white dark:border-zinc-900 animate-in slide-in-from-right-20 duration-500"
       >
         <span className="material-symbols-outlined text-3xl font-black">add</span>
       </button>
 
-      {/* MODAL DE CREACIÓN / EDICIÓN */}
+      {/* MODAL DE CREACIÓN / EDICIÓN (CORREGIDO) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/80 backdrop-blur-md px-4 pb-0">
           <form 
             onSubmit={handleSubmit}
-            className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-t-[3.5rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col max-h-[92vh]"
+            className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-t-[3.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col max-h-[92vh]"
           >
             <div className="flex items-center justify-between mb-8 shrink-0">
                <div>
                  <h3 className="text-3xl font-black tracking-tighter italic">
-                   {editingPostId ? 'Editar Post' : 'Nueva Historia'}
+                   {editingPostId ? 'Modificar' : 'Nueva Historia'}
                  </h3>
-                 <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mt-2">Pack Leadership Panel</p>
+                 <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mt-1">Liderazgo Canino</p>
                </div>
                <button 
                 type="button"
@@ -279,8 +274,8 @@ const CommunityView: React.FC = () => {
 
             <div className="space-y-8 overflow-y-auto no-scrollbar pb-8 flex-1">
               <div className="space-y-4">
-                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Etiqueta tu historia</p>
-                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Etiqueta de grupo</p>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                   {categories.map(cat => (
                     <button
                       key={cat.name}
@@ -288,7 +283,7 @@ const CommunityView: React.FC = () => {
                       onClick={() => setCategory(cat.name)}
                       className={`px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-tight whitespace-nowrap transition-all border-2 ${
                         category === cat.name 
-                          ? 'bg-primary border-primary text-black shadow-lg' 
+                          ? 'bg-primary border-primary text-black shadow-lg shadow-primary/20' 
                           : 'bg-gray-50 dark:bg-zinc-800 border-transparent text-gray-500'
                       }`}
                     >
@@ -299,25 +294,26 @@ const CommunityView: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Escribe algo increíble</p>
+                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">¿Qué está pasando?</p>
                 <textarea
                   autoFocus
+                  required
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full h-52 bg-gray-50 dark:bg-zinc-800 border-none rounded-[2.5rem] p-8 text-base font-bold focus:ring-4 focus:ring-primary/20 shadow-inner resize-none text-gray-800 dark:text-white"
-                  placeholder="Ej: Max aprendió a dar la pata hoy... 🐾"
+                  className="w-full h-44 bg-gray-50 dark:bg-zinc-800 border-none rounded-[2.5rem] p-8 text-base font-bold focus:ring-4 focus:ring-primary/20 shadow-inner resize-none text-gray-800 dark:text-white"
+                  placeholder="¡Cuéntale a la manada hoy! 🐾"
                 />
               </div>
             </div>
 
-            <div className="pt-6 pb-10 shrink-0">
+            <div className="pt-6 pb-12 shrink-0">
                <button 
                 type="submit"
                 disabled={!content.trim()}
-                className="w-full h-20 bg-primary text-black rounded-[2rem] font-black shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-[0.3em] text-xs disabled:opacity-20 flex items-center justify-center gap-3"
+                className="w-full h-18 bg-primary text-black rounded-[2rem] font-black shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-[0.3em] text-xs disabled:opacity-30 flex items-center justify-center gap-3 py-6"
                >
-                 {editingPostId ? 'Guardar Cambios' : 'Lanzar al Muro'}
-                 <span className="material-symbols-outlined font-black">send</span>
+                 {editingPostId ? 'Confirmar Cambios' : 'Lanzar al Muro'}
+                 <span className="material-symbols-outlined font-black text-xl">send</span>
                </button>
             </div>
           </form>
@@ -330,14 +326,14 @@ const CommunityView: React.FC = () => {
           <div className="w-full max-w-md h-[95vh] bg-background-light dark:bg-background-dark rounded-t-[4rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-500 flex flex-col">
             <div className="p-6 flex items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 shrink-0">
               <div className="flex items-center gap-4">
-                <div className="size-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="size-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
                   <span className="material-symbols-outlined text-black font-black">smart_toy</span>
                 </div>
                 <div>
                   <h3 className="font-black text-base uppercase tracking-tight">Perri AI Chat</h3>
                   <div className="flex items-center gap-2">
                     <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">IA Conectada</p>
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">IA en línea</p>
                   </div>
                 </div>
               </div>
