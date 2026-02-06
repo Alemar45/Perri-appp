@@ -13,7 +13,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
   const handleAction = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    // En una app real validaríamos aquí. Para este prototipo premium, permitimos el acceso.
     onLogin();
   };
 
@@ -46,7 +45,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
             <form onSubmit={handleAction} className="space-y-4">
               <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 text-xl">mail</span>
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-xl">mail</span>
                 <input 
                   required
                   type="email" 
@@ -59,7 +58,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
               {mode !== 'forgot' && (
                 <div className="relative">
-                  <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 text-xl">lock</span>
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-xl">lock</span>
                   <input 
                     required
                     type={showPassword ? 'text' : 'password'} 
@@ -91,7 +90,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               </div>
 
               <button 
-                onClick={() => handleAction()}
+                type="button"
+                onClick={() => onLogin()}
                 className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
               >
                 Continuar como invitado
