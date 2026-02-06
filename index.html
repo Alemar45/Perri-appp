@@ -1,55 +1,144 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Perri - App Canina</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet">
-    <script>
-        window.tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#f4c025",
-                        "background-light": "#fcfbf8",
-                        "background-dark": "#121212",
-                    },
-                    fontFamily: { "display": ["Plus Jakarta Sans", "sans-serif"] },
-                },
-            },
-        }
-    </script>
-    <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
-            overscroll-behavior-y: contain;
-            margin: 0;
-            padding: 0;
-        }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .material-symbols-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.3"
-  }
-}
-</script>
-</head>
-<body class="bg-background-light dark:bg-background-dark text-[#1c180d] dark:text-[#fcfbf8]">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-</body>
-</html>
+import React, { useState, useEffect, useCallback } from 'react';
+import { VET_CLINICS as INITIAL_VETS } from '../constants';
+import { VetClinic } from '../types';
+import { getVetsByZone } from '../geminiService';
+
+const VetsView: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [clinics, setClinics] = useState<VetClinic[]>(INITIAL_VETS);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState('Buenos Aires');
+  const [filter24h, setFilter24h] = useState(false);
+
+  const performSearch = useCallback(async (term: string, lat?: number, lng?: number) => {
+    setIsLoading(true);
+    try {
+      const results = await getVetsByZone(term, lat, lng);
+      if (results && results.length > 0) {
+        setClinics(results);
+        setCurrentLocation(lat && lng ? 'Mi Ubicación' : term);
+      }
+    } catch (err) {
+      console.error("Error en búsqueda:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleGeoLocation = () => {
+    if (!navigator.geolocation) {
+      alert("La geolocalización no es compatible con este navegador.");
+      return;
+    }
+    setIsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => performSearch("clínicas cercanas", pos.coords.latitude, pos.coords.longitude),
+      (error) => {
+        console.error("Error obteniendo ubicación:", error);
+        setIsLoading(false);
+        alert("No se pudo obtener tu ubicación actual.");
+      }
+    );
+  };
+
+  useEffect(() => {
+    // Solo busca si tenemos los mocks iniciales
+    if (clinics.length <= 2) {
+      performSearch('Buenos Aires');
+    }
+  }, [performSearch]);
+
+  const displayClinics = filter24h 
+    ? clinics.filter(v => v.is24h) 
+    : clinics;
+
+  return (
+    <div className="pb-32 min-h-screen bg-background-light dark:bg-background-dark">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-6 border-b border-gray-100 dark:border-zinc-800 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="size-12 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20 rotate-3">
+            <span className="material-symbols-outlined text-black text-2xl font-black">local_hospital</span>
+          </div>
+          <div>
+            <h2 className="text-2xl font-black uppercase tracking-tighter italic leading-none">Vets Radar</h2>
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">
+              {isLoading ? 'Rastreando...' : `Zona: ${currentLocation}`}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex gap-3">
+          <button 
+            onClick={handleGeoLocation} 
+            disabled={isLoading}
+            className="size-14 bg-white dark:bg-zinc-800 border-2 border-primary/20 rounded-[1.25rem] flex items-center justify-center text-primary shadow-sm active:scale-95 transition-all disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined font-black">my_location</span>
+          </button>
+          <div className="relative flex-1">
+            <input 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && performSearch(searchTerm)}
+              className="w-full h-14 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.25rem] px-6 text-sm font-bold shadow-inner outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="Buscar ciudad..."
+            />
+          </div>
+          <button 
+            onClick={() => setFilter24h(!filter24h)}
+            className={`size-14 rounded-[1.25rem] flex items-center justify-center border-2 transition-all active:scale-95 ${
+              filter24h 
+                ? 'bg-red-500 border-red-500 text-white shadow-lg' 
+                : 'bg-white dark:bg-zinc-800 border-gray-100 dark:border-zinc-700 text-gray-400'
+            }`}
+          >
+            <span className="material-symbols-outlined font-black">emergency</span>
+          </button>
+        </div>
+      </header>
+
+      <div className="p-6 space-y-4">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest text-center">
+              Consultando red de veterinarias...
+            </p>
+          </div>
+        ) : displayClinics.length === 0 ? (
+          <div className="text-center py-20 text-gray-400 font-bold text-sm italic">
+            No se encontraron clínicas en esta zona.
+          </div>
+        ) : (
+          displayClinics.map((vet) => (
+            <div key={vet.id} className="bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] shadow-sm border border-gray-50 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-black text-xl leading-tight pr-4">{vet.name}</h3>
+                <span className={`text-[8px] font-black px-2 py-1 rounded-full uppercase shrink-0 ${vet.is24h ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                  {vet.is24h ? '24H' : 'Normal'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mb-4 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">location_on</span>
+                {vet.address}
+              </p>
+              <div className="flex gap-2">
+                <a 
+                  href={`tel:${vet.phone}`} 
+                  className="flex-1 h-12 bg-primary text-black rounded-xl flex items-center justify-center font-black text-[10px] uppercase shadow-md active:scale-95 transition-all"
+                >
+                  Llamar ahora
+                </a>
+                <button className="size-12 bg-gray-100 dark:bg-zinc-800 text-gray-500 rounded-xl flex items-center justify-center active:scale-95">
+                  <span className="material-symbols-outlined">share</span>
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default VetsView;
