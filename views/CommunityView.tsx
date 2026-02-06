@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MOCK_POSTS } from '../constants';
 import { Post } from '../types';
 import ChatView from './ChatView';
@@ -7,7 +7,21 @@ import ChatView from './ChatView';
 const CommunityView: React.FC = () => {
   const [filter, setFilter] = useState('Todos');
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [posts] = useState<Post[]>(MOCK_POSTS);
+  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
+  
+  // Estado para los posts con persistencia local
+  const [posts, setPosts] = useState<Post[]>(() => {
+    const saved = localStorage.getItem('perri_community_posts');
+    return saved ? JSON.parse(saved) : MOCK_POSTS;
+  });
+
+  // Estado para el nuevo post
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostCategory, setNewPostCategory] = useState('Travesuras');
+
+  useEffect(() => {
+    localStorage.setItem('perri_community_posts', JSON.stringify(posts));
+  }, [posts]);
 
   const categories = [
     { name: 'Paseos', icon: 'directions_walk', color: 'bg-emerald-50 text-emerald-600' },
@@ -16,6 +30,36 @@ const CommunityView: React.FC = () => {
     { name: 'Extraviados', icon: 'emergency_home', color: 'bg-red-50 text-red-600' },
   ];
 
+  const handleCreatePost = () => {
+    if (!newPostContent.trim()) return;
+
+    const newPost: Post = {
+      id: `p-${Date.now()}`,
+      author: 'Tú',
+      time: 'Recién',
+      category: newPostCategory,
+      content: newPostContent,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      type: newPostCategory === 'Extraviados' ? 'lost' : 'regular',
+      isLiked: false
+    };
+
+    setPosts([newPost, ...posts]);
+    setNewPostContent('');
+    setIsNewPostModalOpen(false);
+  };
+
+  const handleLike = (id: string) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === id) {
+        return { ...p, likes: p.isLiked ? p.likes - 1 : p.likes + 1, isLiked: !p.isLiked };
+      }
+      return p;
+    }));
+  };
+
   return (
     <div className="pb-32 min-h-screen bg-background-light dark:bg-background-dark animate-in fade-in duration-500">
       <header className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 p-4 flex items-center justify-between">
@@ -23,7 +67,11 @@ const CommunityView: React.FC = () => {
           <span className="text-2xl">🌍</span>
           <h2 className="text-xl font-black uppercase tracking-tighter italic">Comunidad</h2>
         </div>
-        <button className="h-10 px-5 rounded-full bg-primary text-black font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">
+        <button 
+          onClick={() => setIsNewPostModalOpen(true)}
+          className="h-10 px-5 rounded-full bg-primary text-black font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
           Nuevo Post
         </button>
       </header>
@@ -104,8 +152,11 @@ const CommunityView: React.FC = () => {
               <div className="p-6">
                 <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">{post.content}</p>
                 <div className="mt-6 pt-4 border-t border-gray-50 dark:border-zinc-800 flex items-center gap-6">
-                   <button className="flex items-center gap-2 text-gray-400 group">
-                     <span className="material-symbols-outlined text-xl group-active:scale-125 transition-transform">favorite</span>
+                   <button 
+                    onClick={() => handleLike(post.id)}
+                    className={`flex items-center gap-2 group transition-colors ${post.isLiked ? 'text-red-500' : 'text-gray-400'}`}
+                   >
+                     <span className={`material-symbols-outlined text-xl group-active:scale-125 transition-transform ${post.isLiked ? 'material-symbols-fill' : ''}`}>favorite</span>
                      <span className="text-xs font-black">{post.likes}</span>
                    </button>
                    <button className="flex items-center gap-2 text-gray-400">
@@ -116,8 +167,70 @@ const CommunityView: React.FC = () => {
               </div>
             </div>
           ))}
+          {posts.filter(p => filter === 'Todos' || p.category === filter).length === 0 && (
+            <div className="py-20 text-center">
+              <span className="material-symbols-outlined text-6xl text-gray-200 mb-4">pets</span>
+              <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">No hay historias en esta categoría aún</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* MODAL NUEVO POST */}
+      {isNewPostModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/60 backdrop-blur-sm px-4 pb-0">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-t-[3rem] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between mb-8">
+               <h3 className="text-2xl font-black tracking-tight italic">Nueva Historia</h3>
+               <button 
+                onClick={() => setIsNewPostModalOpen(false)} 
+                className="size-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-90"
+               >
+                 <span className="material-symbols-outlined">close</span>
+               </button>
+            </div>
+
+            <div className="space-y-6 overflow-y-auto no-scrollbar pb-6">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">Categoría</p>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.name}
+                      onClick={() => setNewPostCategory(cat.name)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter whitespace-nowrap transition-all border-2 ${
+                        newPostCategory === cat.name ? 'bg-primary border-primary text-black' : 'bg-gray-50 dark:bg-zinc-800 border-transparent text-gray-500'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">¿Qué está pasando?</p>
+                <textarea
+                  value={newPostContent}
+                  onChange={(e) => setNewPostContent(e.target.value)}
+                  className="w-full h-40 bg-gray-50 dark:bg-zinc-800 border-none rounded-[2rem] p-6 text-sm font-bold focus:ring-2 focus:ring-primary shadow-inner resize-none"
+                  placeholder="¡Cuéntale a la manada!"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 pb-8">
+               <button 
+                onClick={handleCreatePost}
+                disabled={!newPostContent.trim()}
+                className="w-full h-16 bg-primary text-black rounded-2xl font-black shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-[0.2em] text-xs disabled:opacity-30"
+               >
+                 Publicar ahora
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CHAT OVERLAY (BOTTOM SHEET) */}
       {isChatOpen && (
