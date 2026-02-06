@@ -23,7 +23,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         <div className="absolute bottom-[-10%] left-[-10%] size-[500px] bg-blue-500/10 rounded-full blur-[100px]"></div>
       </div>
 
-      <div className="relative z-10 flex flex-col h-full px-8 pt-20 pb-10">
+      <div className="relative z-10 flex flex-col h-full px-8 pt-20 pb-6">
         <div className="flex flex-col items-center mb-10 animate-in fade-in zoom-in duration-1000">
           <div className="size-20 bg-primary rounded-[2rem] flex items-center justify-center shadow-[0_0_60px_rgba(244,192,37,0.4)] rotate-12 mb-6">
             <span className="material-symbols-outlined text-black text-4xl font-black">pets</span>
@@ -40,7 +40,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 {mode === 'register' && 'Nuevo Miembro'}
                 {mode === 'forgot' && 'Recuperar'}
               </h2>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acceso exclusivo a la manada</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acceso exclusivo</p>
             </div>
 
             <form onSubmit={handleAction} className="space-y-4">
@@ -51,7 +51,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 text-sm font-bold focus:ring-2 focus:ring-primary outline-none"
+                  className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 text-sm font-bold focus:ring-2 focus:ring-primary outline-none text-white"
                   placeholder="Email"
                 />
               </div>
@@ -64,7 +64,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                     type={showPassword ? 'text' : 'password'} 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl pl-14 pr-14 text-sm font-bold focus:ring-2 focus:ring-primary outline-none"
+                    className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl pl-14 pr-14 text-sm font-bold focus:ring-2 focus:ring-primary outline-none text-white"
                     placeholder="Contraseña"
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500">
@@ -75,7 +75,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
               <button 
                 type="submit"
-                className="w-full h-16 bg-primary text-black font-black text-xs uppercase tracking-[0.3em] rounded-2xl shadow-[0_15px_40px_rgba(244,192,37,0.2)] active:scale-95 transition-all flex items-center justify-center gap-3 mt-4"
+                className="w-full h-16 bg-primary text-black font-black text-xs uppercase tracking-[0.3em] rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 mt-4"
               >
                 Entrar ahora
                 <span className="material-symbols-outlined font-black">arrow_forward</span>
@@ -100,9 +100,17 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-center gap-8">
-           <button onClick={() => setMode('login')} className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all ${mode === 'login' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500'}`}>Login</button>
-           <button onClick={() => setMode('register')} className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all ${mode === 'register' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500'}`}>Registro</button>
+        <div className="mt-6 flex flex-col items-center gap-6">
+           <div className="flex justify-center gap-8">
+              <button onClick={() => setMode('login')} className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all ${mode === 'login' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500'}`}>Login</button>
+              <button onClick={() => setMode('register')} className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all ${mode === 'register' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500'}`}>Registro</button>
+           </div>
+           
+           {/* ETIQUETA DE VERIFICACIÓN DE BUILD */}
+           <div className="flex items-center gap-2 opacity-20 group hover:opacity-100 transition-opacity">
+              <span className="size-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+              <p className="text-[8px] font-black uppercase tracking-[0.3em]">Build Sincronizada v1.0.5</p>
+           </div>
         </div>
       </div>
     </div>
