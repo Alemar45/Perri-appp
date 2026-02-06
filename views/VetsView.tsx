@@ -28,7 +28,7 @@ const VetsView: React.FC = () => {
 
   const handleGeoLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocalización no soportada");
+      alert("Tu dispositivo no permite geolocalización.");
       return;
     }
     setIsLoading(true);
@@ -36,7 +36,7 @@ const VetsView: React.FC = () => {
       (pos) => performSearch("", pos.coords.latitude, pos.coords.longitude),
       () => {
         setIsLoading(false);
-        alert("No se pudo obtener tu ubicación");
+        alert("No pudimos acceder a tu ubicación.");
       }
     );
   };
@@ -61,7 +61,7 @@ const VetsView: React.FC = () => {
           <div>
             <h2 className="text-2xl font-black uppercase tracking-tighter italic leading-none">Vets Radar</h2>
             <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">
-              {isLoading ? 'Rastreando...' : `Zona: ${currentLocation}`}
+              {isLoading ? 'Rastreando zona...' : `Cerca de: ${currentLocation}`}
             </p>
           </div>
         </div>
@@ -70,7 +70,7 @@ const VetsView: React.FC = () => {
           <button 
             onClick={handleGeoLocation} 
             disabled={isLoading}
-            className="size-14 bg-white dark:bg-zinc-800 border-2 border-primary/20 rounded-[1.25rem] flex items-center justify-center text-primary shadow-sm active:scale-95 disabled:opacity-50"
+            className="size-14 bg-white dark:bg-zinc-800 border-2 border-primary/20 rounded-[1.25rem] flex items-center justify-center text-primary shadow-sm active:scale-95 transition-all disabled:opacity-50"
           >
             <span className="material-symbols-outlined font-black">my_location</span>
           </button>
@@ -79,15 +79,15 @@ const VetsView: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && performSearch(searchTerm)}
-              className="w-full h-14 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.25rem] px-6 text-sm font-bold shadow-inner outline-none dark:text-white"
-              placeholder="Buscar ciudad o barrio..."
+              className="w-full h-14 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.25rem] px-6 text-sm font-bold shadow-inner outline-none focus:ring-2 focus:ring-primary/20 dark:text-white"
+              placeholder="Ej: Palermo, Madrid..."
             />
           </div>
           <button 
             onClick={() => setFilter24h(!filter24h)}
-            className={`size-14 rounded-[1.25rem] flex items-center justify-center border-2 transition-all ${
+            className={`size-14 rounded-[1.25rem] flex items-center justify-center border-2 transition-all active:scale-95 ${
               filter24h 
-                ? 'bg-red-500 border-red-500 text-white shadow-lg' 
+                ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/20' 
                 : 'bg-white dark:bg-zinc-800 border-gray-100 dark:border-zinc-700 text-gray-400'
             }`}
           >
@@ -98,27 +98,39 @@ const VetsView: React.FC = () => {
 
       <div className="p-6 space-y-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Consultando red...</p>
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-400 font-black text-[10px] uppercase tracking-[0.3em] text-center">IA rastreando clínicas...</p>
           </div>
         ) : displayClinics.length === 0 ? (
           <div className="text-center py-20 text-gray-400 font-bold text-sm italic">No se encontraron clínicas.</div>
         ) : (
           displayClinics.map((vet) => (
-            <div key={vet.id} className="bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] shadow-sm border border-gray-50 dark:border-zinc-800">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-black text-xl leading-tight pr-4">{vet.name}</h3>
-                <span className={`text-[8px] font-black px-2 py-1 rounded-full uppercase shrink-0 ${vet.is24h ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
-                  {vet.is24h ? '24H' : 'Normal'}
+            <div key={vet.id} className="bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] shadow-sm border border-gray-50 dark:border-zinc-800 group transition-all">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="font-black text-xl leading-tight">{vet.name}</h3>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-amber-400 text-sm material-symbols-fill">star</span>
+                    <span className="text-[10px] font-black">{vet.rating || '4.5'}</span>
+                  </div>
+                </div>
+                <span className={`text-[8px] font-black px-3 py-1.5 rounded-full uppercase shrink-0 ${vet.is24h ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                  {vet.is24h ? '24 HORAS' : 'ABIERTO'}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mb-4">{vet.address}</p>
+              
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{vet.address}</p>
+
               <div className="flex gap-2">
-                <a href={`tel:${vet.phone}`} className="flex-1 h-12 bg-primary text-black rounded-xl flex items-center justify-center font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
-                  Llamar ahora
+                <a 
+                  href={`tel:${vet.phone}`} 
+                  className="flex-1 h-12 bg-primary text-black rounded-xl flex items-center justify-center font-black text-[10px] uppercase shadow-md active:scale-95 transition-all gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">call</span>
+                  Llamar
                 </a>
-                <button className="size-12 bg-gray-100 dark:bg-zinc-800 text-gray-500 rounded-xl flex items-center justify-center active:scale-95">
+                <button className="size-12 bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 rounded-xl flex items-center justify-center active:scale-95">
                   <span className="material-symbols-outlined">directions</span>
                 </button>
               </div>
