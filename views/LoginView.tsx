@@ -106,10 +106,10 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               <button onClick={() => setMode('register')} className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all ${mode === 'register' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500'}`}>Registro</button>
            </div>
            
-           {/* ETIQUETA DE VERIFICACIÓN DE BUILD */}
-           <div className="flex items-center gap-2 opacity-20 group hover:opacity-100 transition-opacity">
-              <span className="size-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-              <p className="text-[8px] font-black uppercase tracking-[0.3em]">Build Sincronizada v1.0.5</p>
+           {/* ETIQUETA DE VERIFICACIÓN DE BUILD ACTUALIZADA */}
+           <div className="flex items-center gap-2 opacity-40 group hover:opacity-100 transition-opacity">
+              <span className="size-2 bg-emerald-500 rounded-full animate-ping"></span>
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-500">Build v1.0.6 - CONECTADO</p>
            </div>
         </div>
       </div>
