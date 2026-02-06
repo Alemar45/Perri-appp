@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-import LoginView from "./views/LoginView";
-import HealthView from "./views/HealthView";
-import CommunityView from "./views/CommunityView";
-import VetsView from "./views/VetsView";
-import ChatView from "./views/ChatView";
-import ProfileView from "./views/ProfileView";
+import LoginView from "./vistas/LoginView";
+import HealthView from "./vistas/HealthView";
+import CommunityView from "./vistas/CommunityView";
+import VetsView from "./vistas/VetsView";
+import ChatView from "./vistas/ChatView";
+import ProfileView from "./vistas/ProfileView";
 
-import BottomNav from "./components/BottomNav";
+import BottomNav from "./componentes/BottomNav";
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -122,3 +122,4 @@ function App() {
 }
 
 export default App;
+
