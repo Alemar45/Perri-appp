@@ -1,251 +1,355 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { INITIAL_PET, HEALTH_STATS } from '../constants';
-import { PetProfile, HealthStat } from '../types';
+import React, { useState, useEffect } from 'react';
+import { MOCK_POSTS } from '../constants';
+import { Post } from '../types';
+import ChatView from './ChatView';
 
-const HealthView: React.FC = () => {
-  // Estado del Perfil
-  const [pet, setPet] = useState<PetProfile>(() => {
-    const savedPet = localStorage.getItem('perri_pet_data');
-    return savedPet ? JSON.parse(savedPet) : INITIAL_PET;
+const CommunityView: React.FC = () => {
+  const [filter, setFilter] = useState('Todos');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  
+  // Estado para los posts con persistencia local
+  const [posts, setPosts] = useState<Post[]>(() => {
+    try {
+      const saved = localStorage.getItem('perri_community_posts');
+      return saved ? JSON.parse(saved) : MOCK_POSTS;
+    } catch {
+      return MOCK_POSTS;
+    }
   });
 
-  // Estado de los Registros
-  const [stats, setStats] = useState<HealthStat[]>(() => {
-    const savedStats = localStorage.getItem('perri_health_stats');
-    return savedStats ? JSON.parse(savedStats) : HEALTH_STATS;
-  });
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [tempPet, setTempPet] = useState<PetProfile>(pet);
-  const [tempStats, setTempStats] = useState<HealthStat[]>(stats);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Estado para el contenido del modal
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('Travesuras');
 
   useEffect(() => {
-    localStorage.setItem('perri_pet_data', JSON.stringify(pet));
-    localStorage.setItem('perri_health_stats', JSON.stringify(stats));
-  }, [pet, stats]);
+    localStorage.setItem('perri_community_posts', JSON.stringify(posts));
+  }, [posts]);
 
   const categories = [
-    { name: 'Salud', type: 'health' as const, icon: 'favorite' },
-    { name: 'Higiene', type: 'hygiene' as const, icon: 'spa' },
-    { name: 'Desparasitación', type: 'deworming' as const, icon: 'verified_user' },
+    { name: 'Paseos', icon: 'directions_walk', color: 'bg-emerald-50 text-emerald-600', type: 'regular' as const },
+    { name: 'Eventos', icon: 'groups', color: 'bg-blue-50 text-blue-600', type: 'event' as const },
+    { name: 'Travesuras', icon: 'mood', color: 'bg-amber-50 text-amber-600', type: 'regular' as const },
+    { name: 'Extraviados', icon: 'emergency_home', color: 'bg-red-50 text-red-600', type: 'lost' as const },
   ];
 
-  const handleOpenEdit = () => {
-    setTempPet({ ...pet });
-    setTempStats([...stats]);
-    setIsEditModalOpen(true);
+  const handleOpenNewPost = () => {
+    setEditingPostId(null);
+    setContent('');
+    setCategory('Travesuras');
+    setIsModalOpen(true);
   };
 
-  const handleSave = () => {
-    setPet({ ...tempPet });
-    setStats([...tempStats]);
-    setIsEditModalOpen(false);
+  const handleOpenEdit = (post: Post) => {
+    setEditingPostId(post.id);
+    setContent(post.content);
+    setCategory(post.category);
+    setIsModalOpen(true);
   };
 
-  const handleUpdateStat = (id: string, newStatus: string) => {
-    setTempStats(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
-  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) return;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setTempPet({ ...tempPet, imageUrl: event.target?.result as string });
+    if (editingPostId) {
+      // Editar existente
+      setPosts(prev => prev.map(p => {
+        if (p.id === editingPostId) {
+          return { ...p, content, category };
+        }
+        return p;
+      }));
+    } else {
+      // Crear nuevo
+      const categoryObj = categories.find(c => c.name === category);
+      const newPost: Post = {
+        id: `p-${Date.now()}`,
+        author: 'Tú',
+        time: 'Recién',
+        category: category,
+        content: content,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        type: categoryObj ? categoryObj.type : 'regular',
+        isLiked: false
       };
-      reader.readAsDataURL(file);
+      setPosts(prev => [newPost, ...prev]);
+    }
+
+    setIsModalOpen(false);
+    setContent('');
+    setEditingPostId(null);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('¿Seguro que quieres borrar esta historia?')) {
+      setPosts(prev => prev.filter(p => p.id !== id));
     }
   };
 
+  const handleLike = (id: string) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === id) {
+        return { ...p, likes: p.isLiked ? p.likes - 1 : p.likes + 1, isLiked: !p.isLiked };
+      }
+      return p;
+    }));
+  };
+
   return (
-    <div className="pb-32 bg-background-light dark:bg-background-dark animate-in fade-in duration-500">
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
-        <div className="flex flex-col items-center p-5 pt-7 pb-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-black italic tracking-tighter text-black dark:text-white">PERRI</h1>
-            <div className="size-8 bg-primary rounded-lg flex items-center justify-center rotate-12 shadow-lg shadow-primary/20">
-               <span className="material-symbols-outlined text-black text-lg font-black">pets</span>
-            </div>
+    <div className="pb-40 min-h-screen bg-background-light dark:bg-background-dark">
+      {/* HEADER PREMIUM */}
+      <header className="sticky top-0 z-[60] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 p-4 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="size-10 bg-primary rounded-xl flex items-center justify-center rotate-6 shadow-lg shadow-primary/20">
+             <span className="material-symbols-outlined text-black text-xl font-black">public</span>
           </div>
-          <p className="text-[9px] font-black uppercase tracking-[0.4em] text-primary mt-2">
-            Salud & Bienestar Elite
-          </p>
+          <div>
+            <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none">Comunidad</h2>
+            <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">La manada unida</p>
+          </div>
         </div>
+        <button 
+          onClick={handleOpenNewPost}
+          className="h-11 px-5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-[10px] uppercase shadow-xl active:scale-90 transition-all flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-sm font-black">add_circle</span>
+          Publicar
+        </button>
       </header>
 
-      <div className="p-6 space-y-8">
-        {/* HERO PET SECTION */}
-        <div className="relative group flex flex-col items-center">
-          <div className="relative">
-             <div className="absolute inset-0 bg-primary/20 blur-[40px] rounded-full scale-110"></div>
-             <div 
-                className="relative size-40 rounded-[3rem] border-4 border-primary bg-cover bg-center shadow-2xl z-10 transition-transform group-hover:scale-105 duration-500"
-                style={{ backgroundImage: `url("${pet.imageUrl}")` }}
-             />
-             <button 
-                onClick={handleOpenEdit}
-                className="absolute -bottom-2 -right-2 z-20 size-12 bg-black dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center shadow-2xl active:scale-90 transition-all border-4 border-background-light dark:border-background-dark"
-             >
-                <span className="material-symbols-outlined text-xl">edit</span>
-             </button>
-          </div>
-          <div className="text-center mt-6">
-            <h2 className="text-4xl font-black tracking-tighter italic leading-none">{pet.name}</h2>
-            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs mt-2">{pet.breed}</p>
-            <div className="flex gap-2 justify-center mt-4">
-              <span className="px-4 py-1.5 bg-white dark:bg-zinc-800 rounded-full text-[10px] font-black uppercase border border-gray-100 dark:border-zinc-700 shadow-sm">{pet.age}</span>
-              <span className="px-4 py-1.5 bg-white dark:bg-zinc-800 rounded-full text-[10px] font-black uppercase border border-gray-100 dark:border-zinc-700 shadow-sm">{pet.weight}</span>
+      <div className="px-4 py-6">
+        {/* ASISTENTE AI - DISEÑO TIPO CARD DE CONTROL */}
+        <div className="mb-10">
+          <p className="text-[10px] font-black uppercase text-gray-400 mb-4 px-1 tracking-widest">¿Necesitas ayuda experta?</p>
+          <button 
+            onClick={() => setIsChatOpen(true)}
+            className="w-full relative group overflow-hidden bg-zinc-900 dark:bg-white p-6 rounded-[2.5rem] shadow-2xl active:scale-[0.98] transition-all border-b-8 border-primary/30"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+               <span className="material-symbols-outlined text-8xl font-black text-white dark:text-black">smart_toy</span>
             </div>
-          </div>
-        </div>
-
-        {/* NUTRICIÓN CARD */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Plan Nutricional</h3>
-            <button onClick={handleOpenEdit} className="text-primary text-[10px] font-black uppercase">Cambiar Dieta</button>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-gray-50 dark:border-zinc-800 grid grid-cols-2 gap-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-               <span className="material-symbols-outlined text-7xl font-black">restaurant</span>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Alimento</p>
-              <p className="font-black text-base italic leading-tight text-primary">{pet.foodType}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Ración</p>
-              <p className="font-black text-base italic leading-tight">{pet.foodDosage}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* CATEGORÍAS MÉDICAS */}
-        {categories.map((cat) => (
-          <div key={cat.name} className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <div className="flex items-center gap-2">
-                 <span className="material-symbols-outlined text-primary text-lg">{cat.icon}</span>
-                 <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">{cat.name}</h3>
+            <div className="relative z-10 flex items-center gap-5">
+              <div className="size-14 bg-primary rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40">
+                <span className="material-symbols-outlined text-black font-black text-3xl">chat_bubble</span>
               </div>
-              <button onClick={handleOpenEdit} className="text-primary text-[10px] font-black uppercase">Editar</button>
+              <div className="text-left">
+                <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-1">Perri AI Chat 2.5</p>
+                <h4 className="text-white dark:text-black text-xl font-black tracking-tight italic">Consultar al Asistente</h4>
+              </div>
             </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden border border-gray-50 dark:border-zinc-800 shadow-sm divide-y divide-gray-50 dark:divide-zinc-800">
-              {stats.filter(s => s.type === cat.type).map((stat) => (
-                <div key={stat.id} className="flex items-center justify-between p-6 group active:bg-gray-50 dark:active:bg-zinc-800 transition-colors">
-                  <div className="flex items-center gap-5">
-                    <div className={`size-12 rounded-2xl flex items-center justify-center transition-all ${stat.color ? 'bg-red-50 text-red-500 shadow-red-500/10' : 'bg-gray-50 dark:bg-zinc-800 text-primary'} shadow-lg`}>
-                      <span className="material-symbols-outlined text-2xl font-black">{stat.icon}</span>
-                    </div>
-                    <div>
-                      <p className="text-base font-black italic tracking-tight group-hover:text-primary transition-colors">{stat.title}</p>
-                      <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${stat.color || 'text-gray-400'}`}>{stat.status}</p>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-gray-300 group-hover:text-primary transition-colors">chevron_right</span>
-                </div>
-              ))}
-            </div>
+          </button>
+        </div>
+
+        {/* EXPLORAR CATEGORÍAS - GRID COMPACTO Y ORDENADO */}
+        <p className="text-[10px] font-black uppercase text-gray-400 mb-4 px-1 tracking-widest">Filtrar Historias</p>
+        <div className="grid grid-cols-2 gap-4 mb-10">
+          {categories.map((cat) => (
+            <button
+              key={cat.name}
+              onClick={() => setFilter(filter === cat.name ? 'Todos' : cat.name)}
+              className={`flex items-center gap-3 p-4 rounded-[1.8rem] border-2 transition-all duration-300 h-16 ${
+                filter === cat.name 
+                  ? 'bg-primary border-primary shadow-xl scale-[1.05] text-black' 
+                  : 'bg-white dark:bg-zinc-800 border-gray-100 dark:border-zinc-800 text-gray-500'
+              }`}
+            >
+              <div className={`size-9 rounded-xl flex items-center justify-center shrink-0 ${cat.color} ${filter === cat.name ? 'bg-white/40 text-black' : ''}`}>
+                <span className="material-symbols-outlined text-xl font-bold">{cat.icon}</span>
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-tighter truncate">
+                {cat.name}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* LISTADO DE POSTS CON OPCIONES DE EDICIÓN */}
+        <div className="flex items-center justify-between px-1 mb-8">
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-2xl font-black tracking-tighter italic">Novedades</h3>
+            <span className="size-2 bg-red-500 rounded-full animate-pulse"></span>
           </div>
-        ))}
+          {filter !== 'Todos' && (
+            <button onClick={() => setFilter('Todos')} className="text-[10px] font-black text-primary uppercase underline tracking-[0.2em]">Restablecer</button>
+          )}
+        </div>
+
+        <div className="space-y-8">
+          {posts.filter(p => filter === 'Todos' || p.category === filter).map((post) => (
+            <div key={post.id} className="group bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800 transition-all hover:shadow-xl hover:-translate-y-1">
+              <div className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="size-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center font-black text-sm text-primary shadow-inner">
+                    {post.author[0]}
+                  </div>
+                  <div>
+                    <p className="font-black text-base leading-none">{post.author}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-1.5 flex items-center gap-2">
+                      <span className="text-primary">#{post.category}</span>
+                      <span>•</span>
+                      <span>{post.time}</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* BOTONES DE EDICIÓN SOLO PARA 'TÚ' */}
+                {post.author === 'Tú' && (
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => handleOpenEdit(post)}
+                      className="size-10 rounded-full bg-gray-50 dark:bg-zinc-800 text-gray-400 flex items-center justify-center hover:bg-primary hover:text-black transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(post.id)}
+                      className="size-10 rounded-full bg-gray-50 dark:bg-zinc-800 text-gray-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="px-8 pb-6">
+                <p className="text-base font-medium leading-relaxed text-gray-700 dark:text-gray-300 italic">"{post.content}"</p>
+              </div>
+
+              {post.imageUrl && (
+                <div className="px-4 pb-4">
+                  <img src={post.imageUrl} className="w-full h-64 object-cover rounded-[2.5rem] shadow-lg" alt="Post" />
+                </div>
+              )}
+
+              <div className="px-8 py-6 flex items-center gap-8 border-t border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-800/20">
+                 <button 
+                  onClick={() => handleLike(post.id)}
+                  className={`flex items-center gap-2 transition-all active:scale-125 ${post.isLiked ? 'text-red-500' : 'text-gray-400'}`}
+                 >
+                   <span className={`material-symbols-outlined text-2xl ${post.isLiked ? 'material-symbols-fill' : ''}`}>favorite</span>
+                   <span className="text-xs font-black">{post.likes}</span>
+                 </button>
+                 <button className="flex items-center gap-2 text-gray-400 hover:text-primary transition-colors">
+                   <span className="material-symbols-outlined text-2xl">chat_bubble</span>
+                   <span className="text-xs font-black">{post.comments}</span>
+                 </button>
+                 <button className="flex items-center gap-2 text-gray-400 ml-auto hover:text-primary transition-colors">
+                   <span className="material-symbols-outlined text-2xl">share</span>
+                 </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      
-      {/* MODAL EDITAR SALUD */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/80 backdrop-blur-md px-4 pb-0">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-t-[3.5rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-300 h-[94vh] flex flex-col">
+
+      {/* BOTÓN FLOTANTE (FAB) PARA NUEVO POST - ACCESO GARANTIZADO */}
+      <button 
+        onClick={handleOpenNewPost}
+        className="fixed bottom-32 right-6 size-16 bg-primary text-black rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center z-[70] animate-bounce active:scale-90 transition-all border-4 border-white dark:border-zinc-900"
+      >
+        <span className="material-symbols-outlined text-3xl font-black">add</span>
+      </button>
+
+      {/* MODAL DE CREACIÓN / EDICIÓN */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/80 backdrop-blur-md px-4 pb-0">
+          <form 
+            onSubmit={handleSubmit}
+            className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-t-[3.5rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col max-h-[92vh]"
+          >
             <div className="flex items-center justify-between mb-8 shrink-0">
                <div>
-                 <h3 className="text-3xl font-black tracking-tighter italic">Gestión de Salud</h3>
-                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-2">Pack Leadership Hub</p>
+                 <h3 className="text-3xl font-black tracking-tighter italic">
+                   {editingPostId ? 'Editar Post' : 'Nueva Historia'}
+                 </h3>
+                 <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mt-2">Pack Leadership Panel</p>
                </div>
-               <button onClick={() => setIsEditModalOpen(false)} className="size-12 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-90 transition-all">
+               <button 
+                type="button"
+                onClick={() => setIsModalOpen(false)} 
+                className="size-12 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-90 transition-all"
+               >
                  <span className="material-symbols-outlined">close</span>
                </button>
             </div>
-            
-            <div className="flex-1 overflow-y-auto no-scrollbar space-y-10 pb-12">
-              {/* Sección Foto */}
+
+            <div className="space-y-8 overflow-y-auto no-scrollbar pb-8 flex-1">
               <div className="space-y-4">
-                <p className="text-[11px] font-black uppercase text-gray-400 ml-4 tracking-widest">Identidad</p>
-                <div className="flex items-center gap-6 p-6 bg-gray-50 dark:bg-zinc-800 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-zinc-700">
-                  <div 
-                    className="size-24 rounded-3xl bg-center bg-cover bg-zinc-200 border-4 border-primary shrink-0"
-                    style={{ backgroundImage: `url("${tempPet.imageUrl}")` }}
-                  />
-                  <div className="space-y-3">
-                    <button 
+                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Etiqueta tu historia</p>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.name}
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full text-[10px] font-black text-black uppercase bg-primary px-6 py-3 rounded-2xl shadow-xl active:scale-95 transition-all"
+                      onClick={() => setCategory(cat.name)}
+                      className={`px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-tight whitespace-nowrap transition-all border-2 ${
+                        category === cat.name 
+                          ? 'bg-primary border-primary text-black shadow-lg' 
+                          : 'bg-gray-50 dark:bg-zinc-800 border-transparent text-gray-500'
+                      }`}
                     >
-                      Nueva Foto
+                      {cat.name}
                     </button>
-                    <p className="text-[9px] font-bold text-gray-500 text-center uppercase">Formatos: JPG, PNG</p>
-                  </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase text-gray-400 ml-3 tracking-widest">Nombre</p>
-                    <input type="text" value={tempPet.name} onChange={(e) => setTempPet({...tempPet, name: e.target.value})} className="w-full h-14 bg-gray-50 dark:bg-zinc-800 border-none rounded-2xl px-6 font-bold focus:ring-4 focus:ring-primary/20" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase text-gray-400 ml-3 tracking-widest">Edad</p>
-                    <input type="text" value={tempPet.age} onChange={(e) => setTempPet({...tempPet, age: e.target.value})} className="w-full h-14 bg-gray-50 dark:bg-zinc-800 border-none rounded-2xl px-6 font-bold focus:ring-4 focus:ring-primary/20" />
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Nutrición */}
               <div className="space-y-4">
-                <p className="text-[11px] font-black uppercase text-gray-400 ml-4 tracking-widest">Nutrición</p>
-                <div className="bg-gray-50 dark:bg-zinc-800 p-8 rounded-[2.5rem] space-y-6">
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">Alimento</p>
-                    <input type="text" value={tempPet.foodType} onChange={(e) => setTempPet({...tempPet, foodType: e.target.value})} className="w-full h-14 bg-white dark:bg-zinc-700 border-none rounded-2xl px-6 font-bold focus:ring-4 focus:ring-primary/20 shadow-sm" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">Ración</p>
-                    <input type="text" value={tempPet.foodDosage} onChange={(e) => setTempPet({...tempPet, foodDosage: e.target.value})} className="w-full h-14 bg-white dark:bg-zinc-700 border-none rounded-2xl px-6 font-bold focus:ring-4 focus:ring-primary/20 shadow-sm" />
-                  </div>
-                </div>
+                <p className="text-[11px] font-black uppercase text-gray-400 ml-3 tracking-widest">Escribe algo increíble</p>
+                <textarea
+                  autoFocus
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full h-52 bg-gray-50 dark:bg-zinc-800 border-none rounded-[2.5rem] p-8 text-base font-bold focus:ring-4 focus:ring-primary/20 shadow-inner resize-none text-gray-800 dark:text-white"
+                  placeholder="Ej: Max aprendió a dar la pata hoy... 🐾"
+                />
               </div>
-
-              {/* Registros */}
-              {categories.map((cat) => (
-                <div key={cat.name} className="space-y-4">
-                  <p className="text-[11px] font-black uppercase text-gray-400 ml-4 tracking-widest">{cat.name}</p>
-                  <div className="bg-gray-50 dark:bg-zinc-800 p-8 rounded-[3rem] space-y-6">
-                    {tempStats.filter(s => s.type === cat.type).map(stat => (
-                      <div key={stat.id} className="space-y-2">
-                        <div className="flex items-center gap-2 ml-2">
-                          <span className="material-symbols-outlined text-sm text-primary">{stat.icon}</span>
-                          <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{stat.title}</p>
-                        </div>
-                        <input 
-                          type="text" 
-                          value={stat.status} 
-                          onChange={(e) => handleUpdateStat(stat.id, e.target.value)} 
-                          className="w-full h-14 bg-white dark:bg-zinc-700 border-none rounded-2xl px-6 font-bold focus:ring-4 focus:ring-primary/20 shadow-sm"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
             </div>
 
-            <div className="shrink-0 pt-6 pb-12 flex gap-4">
-               <button onClick={() => setIsEditModalOpen(false)} className="flex-1 h-16 bg-gray-100 dark:bg-zinc-800 rounded-2xl font-black text-gray-400 uppercase tracking-widest text-[10px]">
-                 Cerrar
+            <div className="pt-6 pb-10 shrink-0">
+               <button 
+                type="submit"
+                disabled={!content.trim()}
+                className="w-full h-20 bg-primary text-black rounded-[2rem] font-black shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-[0.3em] text-xs disabled:opacity-20 flex items-center justify-center gap-3"
+               >
+                 {editingPostId ? 'Guardar Cambios' : 'Lanzar al Muro'}
+                 <span className="material-symbols-outlined font-black">send</span>
                </button>
-               <button onClick={handleSave} className="flex-[2] h-16 bg-primary text-black rounded-2xl font-black shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest text-[10px]">
-                 Guardar Todo
-               </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* CHAT AI BOTTOM SHEET */}
+      {isChatOpen && (
+        <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/70 backdrop-blur-md">
+          <div className="w-full max-w-md h-[95vh] bg-background-light dark:bg-background-dark rounded-t-[4rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-500 flex flex-col">
+            <div className="p-6 flex items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="size-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="material-symbols-outlined text-black font-black">smart_toy</span>
+                </div>
+                <div>
+                  <h3 className="font-black text-base uppercase tracking-tight">Perri AI Chat</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">IA Conectada</p>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsChatOpen(false)}
+                className="size-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center active:scale-90 transition-all"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+               <ChatView embedded={true} />
             </div>
           </div>
         </div>
@@ -254,4 +358,4 @@ const HealthView: React.FC = () => {
   );
 };
 
-export default HealthView;
+export default CommunityView;
